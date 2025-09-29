@@ -1,10 +1,42 @@
 package ru.ani.islab1.models;
 
+import jakarta.validation.Valid;
+import lombok.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import ru.ani.islab1.models.enums.Color;
+import ru.ani.islab1.models.enums.Country;
+
+@Entity
+@Table(name = "person")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Person {
-    private String name; //Поле не может быть null, Строка не может быть пустой
-    private Color eyeColor; //Поле не может быть null
-    private Color hairColor; //Поле может быть null
-    private Location location; //Поле не может быть null
-    private float weight; //Значение поля должно быть больше 0
-    private Country nationality; //Поле может быть null
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @NotNull @NotBlank
+    private String name;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private Color eyeColor;
+
+    @Enumerated(EnumType.STRING)
+    private Color hairColor; // nullable
+
+    @NotNull
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "location_id")
+    private Location location;
+
+    @Min(1)
+    private Float weight;
+
+    @Enumerated(EnumType.STRING)
+    private Country nationality; // nullable
 }

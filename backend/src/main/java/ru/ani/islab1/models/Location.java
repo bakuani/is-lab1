@@ -1,7 +1,25 @@
 package ru.ani.islab1.models;
 
+import lombok.*;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+@Entity
+@Table(name = "location")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Location {
-    private long x;
-    private Double y; //Поле не может быть null
-    private String name; //Поле может быть null
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    private Long x;
+
+    @NotNull
+    private Double y;
+
+    private String name;
 }

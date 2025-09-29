@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:2309/studygroup_db
+    username: admin
+    password: admin123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop   # ??? validate/none ? ????????
+    show-sql: true
+    properties:
+      jakarta.persistence.validation.mode: AUTO
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
