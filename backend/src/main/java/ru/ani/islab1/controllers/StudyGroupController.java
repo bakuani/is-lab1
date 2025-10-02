@@ -1,14 +1,14 @@
 package ru.ani.islab1.controllers;
 
-import ru.ani.islab1.dto.StudyGroupDto;
-import ru.ani.islab1.models.StudyGroup;
-import ru.ani.islab1.services.StudyGroupService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.ani.islab1.models.StudyGroup;
+import ru.ani.islab1.services.StudyGroupService;
 
-import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
