@@ -38,14 +38,13 @@ public class StudyGroupController {
         return ResponseEntity.ok(service.getById(id));
     }
 
-    // Update (полностью заменяем ресурс)
+    // Update
     @PutMapping("/{id}")
     public ResponseEntity<StudyGroup> update(@PathVariable Integer id, @Valid @RequestBody StudyGroup studyGroup) {
         StudyGroup updated = service.update(id, studyGroup);
         return ResponseEntity.ok(updated);
     }
 
-    // Partial update (PATCH) — опционально (реализуйте при необходимости)
     // Delete
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {

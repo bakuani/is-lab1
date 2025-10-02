@@ -27,7 +27,7 @@ public class StudyGroup {
     private String name;
 
     @NotNull
-    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "coordinates_id")
     private Coordinates coordinates;
 
@@ -51,16 +51,16 @@ public class StudyGroup {
     private FormOfEducation formOfEducation;
 
     @Min(1)
-    private Long shouldBeExpelled; // nullable
+    private Long shouldBeExpelled;
 
     @Min(1)
     private long averageMark;
 
     @Enumerated(EnumType.STRING)
-    private Semester semesterEnum; // nullable
+    private Semester semesterEnum;
 
     @NotNull
-    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, orphanRemoval = true, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin;
 }
