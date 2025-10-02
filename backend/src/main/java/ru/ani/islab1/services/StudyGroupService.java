@@ -3,6 +3,7 @@ package ru.ani.islab1.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.Coordinates;
 import ru.ani.islab1.models.Location;
@@ -64,8 +65,30 @@ public class StudyGroupService {
     }
 
     public void delete(Integer id) {
-        StudyGroup sg = getById(id);
-        repository.delete(sg);
+            StudyGroup group = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("StudyGroup not found"));
+
+            if (repository.existsByCoordinatesAndIdNot(group.getCoordinates(), id)) {
+                throw new CannotDeleteStudyGroupException(
+                        "Cannot delete: Coordinates are used by another study group"
+                );
+            }
+
+            if (group.getGroupAdmin().getLocation() != null &&
+                    personRepository.existsByLocationAndIdNot(group.getGroupAdmin().getLocation(), id)) {
+                throw new CannotDeleteStudyGroupException(
+                        "Cannot delete: Location is used by another person"
+                );
+            }
+
+            if (group.getGroupAdmin() != null &&
+                    repository.existsByGroupAdminAndIdNot(group.getGroupAdmin(), id)) {
+                throw new CannotDeleteStudyGroupException(
+                        "Cannot delete: Admin is assigned to another study group"
+                );
+            }
+
+            repository.delete(group);
     }
 
 

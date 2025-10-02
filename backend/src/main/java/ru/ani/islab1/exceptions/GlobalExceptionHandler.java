@@ -42,4 +42,11 @@ public class GlobalExceptionHandler {
         body.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    @ExceptionHandler(CannotDeleteStudyGroupException.class)
+    public ResponseEntity<Map<String, String>> handleCannotDeleteStudyGroup(CannotDeleteStudyGroupException ex) {
+        Map<String, String> body = new HashMap<>();
+        body.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 }
