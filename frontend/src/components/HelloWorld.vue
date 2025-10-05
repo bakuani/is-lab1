@@ -200,11 +200,18 @@
               <label>Weight</label>
               <input type="number" v-model.number="form.groupAdmin.weight" :disabled="modalMode==='view'" min="0"
                      required/>
+
             </div>
             <div class="form-row">
               <label>Nationality</label>
-              <input v-model="form.groupAdmin.nationality" :disabled="modalMode==='view'" required/>
+              <select v-model="form.groupAdmin.nationality" :disabled="modalMode==='view'" required>
+                <option disabled value="">Выберите</option>
+                <option value="INDIA">INDIA</option>
+                <option value="UNITED_KINGDOM">UNITED_KINGDOM</option>
+                <option value="JAPAN">JAPAN</option>
+              </select>
             </div>
+
 
             <h5>Location</h5>
             <div class="form-row">
@@ -660,6 +667,8 @@ select {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  width: 200px; /* фиксированная ширина для всех селектов */
+  font-size: 14px;
 }
 
 select:focus {
@@ -667,6 +676,12 @@ select:focus {
   box-shadow: 0 0 6px rgba(255, 126, 179, 0.5);
   outline: none;
 }
+
+/* Для админских селектов (EyeColor, HairColor, Nationality) можно подстроить ширину */
+.admin-nested select {
+  width: 180px;
+}
+
 
 /* Animations */
 @keyframes fadeIn {
