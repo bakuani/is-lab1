@@ -19,10 +19,10 @@ public class Person {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull @NotBlank
+    @NotBlank(message = "Имя обязательно")
     private String name;
 
-    @NotNull
+    @NotNull(message = "Eye color обязательно")
     @Enumerated(EnumType.STRING)
     private Color eyeColor;
 
@@ -30,11 +30,12 @@ public class Person {
     private Color hairColor; // nullable
 
     @NotNull
+    @Valid
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "location_id")
     private Location location;
 
-    @Min(1)
+    @Min(value = 1, message = "Weight ≥ 1")
     private Float weight;
 
     @Enumerated(EnumType.STRING)

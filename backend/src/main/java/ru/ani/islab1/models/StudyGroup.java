@@ -23,10 +23,11 @@ public class StudyGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull @NotBlank
+    @NotBlank(message = "Название группы обязательно")
     private String name;
 
     @NotNull
+    @Valid
     @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "coordinates_id")
     private Coordinates coordinates;
@@ -35,31 +36,35 @@ public class StudyGroup {
     @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
 
-
-    @Min(1)
-    private long studentsCount;
+    @NotNull
+    @Min(value = 1, message = "Students Count ≥ 1")
+    private Long studentsCount;
 
     @NotNull
-    @Min(1)
+    @Min(value = 0, message = "Expelled Students ≥ 0")
     private Integer expelledStudents;
 
-    @Min(1)
-    private long transferredStudents;
-
     @NotNull
+    @Min(value = 0, message = "Transferred Students ≥ 0")
+    private Long transferredStudents;
+
+    @NotNull(message = "Form of Education обязательно")
     @Enumerated(EnumType.STRING)
     private FormOfEducation formOfEducation;
 
-    @Min(1)
+    @NotNull
+    @Min(value = 1, message = "Should Be Expelled ≥ 1")
     private Long shouldBeExpelled;
 
-    @Min(1)
-    private long averageMark;
+    @NotNull
+    @Min(value = 1, message = "Average Mark ≥ 1")
+    private Long averageMark;
 
     @Enumerated(EnumType.STRING)
     private Semester semesterEnum;
 
     @NotNull
+    @Valid
     @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin;

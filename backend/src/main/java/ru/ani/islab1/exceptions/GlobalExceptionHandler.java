@@ -1,5 +1,6 @@
 package ru.ani.islab1.exceptions;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.*;
@@ -48,5 +49,21 @@ public class GlobalExceptionHandler {
         Map<String, String> body = new HashMap<>();
         body.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler({InvalidFormatException.class})
+    public ResponseEntity<Map<String, String>> handleInvalidEnum(InvalidFormatException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        if (!ex.getPath().isEmpty()) {
+            String fieldName = ex.getPath().get(0).getFieldName();
+            String invalidValue = ex.getValue().toString();
+            String targetType = ex.getTargetType().getSimpleName();
+            errors.put(fieldName, "Недопустимое значение '" + invalidValue + "' для поля типа " + targetType);
+        } else {
+            errors.put("error", "Некорректное значение");
+        }
+
+        return ResponseEntity.badRequest().body(errors);
     }
 }
