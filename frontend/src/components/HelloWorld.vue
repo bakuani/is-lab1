@@ -6,15 +6,14 @@
         <button @click="openCreate">Создать группу</button>
         <div class="filter">
           <select v-model="filterField">
-            <option value="">-- Фильтр по полю --</option>
-            <option value="name">name</option>
-            <option value="formOfEducation">formOfEducation</option>
-            <option value="semesterEnum">semesterEnum</option>
-            <option value="groupAdminName">groupAdmin.name</option>
+            <option value="">Фильтровать по полю</option>
+            <option value="name">Название группы</option>
+            <option value="formOfEducation">Форма обучения</option>
+            <option value="semesterEnum">Семестр</option>
+            <option value="groupAdminName">Админ</option>
           </select>
           <input v-model="filterValue" placeholder="Значение (полное совпадение)"/>
-          <button @click="applyFilter">Применить</button>
-          <button @click="clearFilter">Сброс</button>
+          <button class="filter-reset" @click="clearFilter">Сброс</button>
         </div>
       </div>
     </header>
@@ -24,19 +23,28 @@
         <table class="groups-table">
           <thead>
           <tr>
-            <th @click="changeSort('id')">ID <span v-if="sortField==='id'">{{ sortDir }}</span></th>
-            <th @click="changeSort('name')">Name <span v-if="sortField==='name'">{{ sortDir }}</span></th>
-            <th @click="changeSort('studentsCount')">Students</th>
-            <th>Expelled</th>
-            <th>Average Mark</th>
-            <th>Form</th>
-            <th>Semester</th>
-            <th>Admin</th>
+            <th @click="changeSort('id')">ID <span v-if="sortField==='id'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+            </th>
+            <th @click="changeSort('name')">Name <span v-if="sortField==='name'">{{
+                sortDir === 'asc' ? '↑' : '↓'
+              }}</span></th>
+            <th @click="changeSort('studentsCount')">Students <span
+                v-if="sortField==='studentsCount'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
+            <th @click="changeSort('expelledStudents')">Expelled <span
+                v-if="sortField==='expelledStudents'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
+            <th @click="changeSort('averageMark')">Average Mark <span
+                v-if="sortField==='averageMark'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
+            <th @click="changeSort('formOfEducation')">Form <span
+                v-if="sortField==='formOfEducation'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
+            <th @click="changeSort('semesterEnum')">Semester <span
+                v-if="sortField==='semesterEnum'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
+            <th @click="changeSort('groupAdmin.name')">Admin <span
+                v-if="sortField==='groupAdmin.name'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span></th>
             <th>Actions</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="g in groups" :key="g.id">
+          <tr v-for="g in visibleGroups" :key="g.id">
             <td>{{ g.id }}</td>
             <td>{{ g.name }}</td>
             <td>{{ g.studentsCount }}</td>
@@ -54,7 +62,6 @@
           </tbody>
         </table>
 
-        <!-- Delete confirmation modal -->
         <div v-if="showDeleteConfirm" class="modal-backdrop">
           <div class="modal small">
             <h3>Подтвердите удаление</h3>
@@ -65,7 +72,6 @@
             </div>
           </div>
         </div>
-
 
         <div class="pagination">
           <button :disabled="page===0" @click="goToPage(page-1)">Prev</button>
@@ -82,12 +88,10 @@
       <aside class="side">
         <h3>Специальные операции</h3>
         <div class="special">
-          <!-- ... спецоперации без изменений ... -->
         </div>
       </aside>
     </main>
 
-    <!-- Modals -->
     <div v-if="showModal" class="modal-backdrop">
       <div class="modal">
         <h2>{{ modalMode === 'create' ? 'Создать группу' : modalMode === 'edit' ? 'Редактировать' : 'Просмотр' }}</h2>
@@ -139,7 +143,6 @@
             </select>
           </div>
 
-          <!-- Coordinates -->
           <div class="form-row">
             <label>Coordinates X</label>
             <input type="number" step="any" v-model.number="form.coordinates.x" :disabled="modalMode==='view'"
@@ -157,7 +160,6 @@
                    required/>
           </div>
 
-          <!-- Admin select: выбор существующего / новый -->
           <div class="form-row">
             <label>Admin (choose existing)</label>
             <select v-model="form.groupAdminId" @change="onAdminChange" :disabled="modalMode==='view'">
@@ -167,8 +169,6 @@
             <button type="button" v-if="modalMode!=='view'" @click="resetGroupAdminToEmpty">Очистить / новый</button>
           </div>
 
-          <!-- Admin block (ВСЕГДА виден) -->
-          <!-- Admin block -->
           <div class="admin-nested">
             <h4>Admin</h4>
             <div class="form-row">
@@ -212,7 +212,6 @@
               </select>
             </div>
 
-
             <h5>Location</h5>
             <div class="form-row">
               <label>X</label>
@@ -228,7 +227,6 @@
             </div>
           </div>
 
-
           <div class="form-actions">
             <button type="button" @click="closeModal">Отмена</button>
             <button type="submit" v-if="modalMode!=='view'">Сохранить</button>
@@ -237,7 +235,6 @@
       </div>
     </div>
 
-    <!-- Errors modal -->
     <div v-if="showErrorsModal" class="modal-backdrop">
       <div class="modal small">
         <h3>Ошибки при сохранении</h3>
@@ -250,38 +247,32 @@
       </div>
     </div>
 
-
-    <!-- Toast -->
     <div class="toast" v-if="toast.message">{{ toast.message }}</div>
   </div>
 </template>
 
 <script setup>
-import {ref, reactive, onMounted, onBeforeUnmount} from 'vue'
+import {ref, reactive, computed, onMounted, onBeforeUnmount} from 'vue'
 import * as api from '../utilities/api.js'
 import Stomp from 'stompjs'
 import SockJS from 'sockjs-client'
 
-// --- state ---
 const groups = ref([])
 const page = ref(0)
 const pageSize = ref(10)
-const totalPages = ref(1)
 const sortField = ref('id')
 const sortDir = ref('asc')
 const filterField = ref('')
 const filterValue = ref('')
 const showDeleteConfirm = ref(false)
-const deleteId = ref(null)   // <-- вот здесь
+const deleteId = ref(null)
 
 const showModal = ref(false)
 const modalMode = ref('view')
 
 const showErrorsModal = ref(false)
-const serverErrors = ref([]) // массив строк
+const serverErrors = ref([])
 
-
-// form: заранее задаём структуру, чтобы v-model не ломался
 const form = reactive({
   id: null,
   name: '',
@@ -293,8 +284,8 @@ const form = reactive({
   shouldBeExpelled: 1,
   averageMark: 1,
   semesterEnum: '',
-  groupAdminId: null, // только для select
-  groupAdmin: {       // всегда объект — блок админа всегда виден
+  groupAdminId: null,
+  groupAdmin: {
     name: '',
     eyeColor: '',
     hairColor: '',
@@ -309,7 +300,6 @@ const persons = ref([])
 const toast = reactive({message: '', timeout: null})
 let adminOriginalSnapshot = null
 
-// --- utils ---
 function showToast(msg, ms = 4000) {
   clearTimeout(toast.timeout)
   toast.message = msg
@@ -321,16 +311,106 @@ function confirmDelete(id) {
   showDeleteConfirm.value = true
 }
 
+function changeSort(field) {
+  if (sortField.value === field) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDir.value = 'asc'
+  }
+  page.value = 0
+}
+
+function getNestedValue(obj, path) {
+  if (!path) return undefined
+  return path.split('.').reduce((o, key) => (o == null ? undefined : o[key]), obj)
+}
+
+function compareValues(a, b) {
+  if (a == null && b == null) return 0
+  if (a == null) return -1
+  if (b == null) return 1
+
+  const na = Number(a)
+  const nb = Number(b)
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+
+  return String(a).localeCompare(String(b))
+}
+
+const filteredGroups = computed(() => {
+  if (!filterField.value || !filterValue.value) return groups.value.slice()
+
+  const path = filterField.value === 'groupAdminName' ? 'groupAdmin.name' : filterField.value
+
+  return groups.value.filter(g => {
+    const val = getNestedValue(g, path)
+    if (val == null) return false
+    return String(val).trim() === String(filterValue.value).trim()
+  })
+})
+
+const sortedGroups = computed(() => {
+  const arr = filteredGroups.value.slice()
+  const field = sortField.value
+  if (!field) return arr
+
+  arr.sort((a, b) => {
+    const va = getNestedValue(a, field)
+    const vb = getNestedValue(b, field)
+    const cmp = compareValues(
+        typeof va === 'string' ? va.toLowerCase() : va,
+        typeof vb === 'string' ? vb.toLowerCase() : vb
+    )
+    return sortDir.value === 'asc' ? cmp : -cmp
+  })
+  return arr
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedGroups.value.length / pageSize.value)))
+
+const visibleGroups = computed(() => {
+  const start = page.value * pageSize.value
+  return sortedGroups.value.slice(start, start + pageSize.value)
+})
+
+function applyFilter() {
+  page.value = 0
+  
+}
+
+function clearFilter() {
+  filterField.value = ''
+  filterValue.value = ''
+  page.value = 0
+}
+
+function sortGroups() {
+  groups.value.sort((a, b) => {
+    let valA = getNestedValue(a, sortField.value)
+    let valB = getNestedValue(b, sortField.value)
+
+    if (valA == null) valA = ''
+    if (valB == null) valB = ''
+
+    if (typeof valA === 'string') valA = valA.toLowerCase()
+    if (typeof valB === 'string') valB = valB.toLowerCase()
+
+    if (valA < valB) return sortDir.value === 'asc' ? -1 : 1
+    if (valA > valB) return sortDir.value === 'asc' ? 1 : -1
+    return 0
+  })
+}
+
 async function performDelete() {
   try {
     const response = await api.deleteGroup(deleteId.value)
-    // Если сервер возвращает JSON с сообщением
     const msg = response?.data?.message || 'Объект успешно удалён'
     showToast(msg)
     showDeleteConfirm.value = false
     fetchGroups()
   } catch (e) {
-    // Ошибка: сервер вернул 400/500 с пояснением
+
     const errMsg = e.response?.data?.message
         || e.response?.data?.error
         || 'Объект невозможно удалить, так как он используется'
@@ -339,8 +419,6 @@ async function performDelete() {
   }
 }
 
-
-// --- fetchers ---
 async function fetchGroups() {
   try {
     const params = {page: page.value, size: pageSize.value}
@@ -367,7 +445,6 @@ async function fetchPersonsList() {
   }
 }
 
-// --- admin handlers ---
 function resetGroupAdminToEmpty() {
   form.groupAdmin = {
     name: '',
@@ -404,7 +481,6 @@ function onAdminFieldChange() {
   }
 }
 
-// --- modal & CRUD ---
 function openCreate() {
   modalMode.value = 'create'
   Object.assign(form, {
@@ -505,8 +581,6 @@ async function submitModal() {
   }
 }
 
-
-// --- lifecycle ---
 onMounted(() => {
   fetchGroups();
   fetchPersonsList()
@@ -577,6 +651,12 @@ button:hover {
   padding: 10px 12px;
   text-align: left;
 }
+
+.filter select {
+  text-align: center;
+  text-align-last: center;  
+}
+
 
 .groups-table th {
   background: linear-gradient(90deg, #ff758c, #ff7eb3);
@@ -709,7 +789,6 @@ select:focus {
   padding: 16px;
 }
 
-/* === Новое модальное окно для ошибок поверх всего === */
 .modal.errors {
   width: 400px;
   max-height: 70vh;
@@ -717,7 +796,7 @@ select:focus {
   padding: 16px;
   background: linear-gradient(135deg, #fff1f3, #ffe4e1);
   border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
   position: fixed;
   top: 20%;
   left: 50%;
@@ -740,6 +819,4 @@ select:focus {
   color: #d32f2f;
   font-weight: 500;
 }
-
-
 </style>
