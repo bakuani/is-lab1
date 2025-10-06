@@ -46,13 +46,64 @@
           <tbody>
           <tr v-for="g in visibleGroups" :key="g.id">
             <td>{{ g.id }}</td>
-            <td>{{ g.name }}</td>
-            <td>{{ g.studentsCount }}</td>
-            <td>{{ g.expelledStudents }}</td>
-            <td>{{ g.averageMark }}</td>
-            <td>{{ g.formOfEducation }}</td>
-            <td>{{ g.semesterEnum }}</td>
-            <td>{{ g.groupAdmin?.name }}</td>
+            <td>
+              <div v-if="isEditing(g.id, 'name')">
+                <input v-model="editing.value" @blur="finishEdit(g, 'name')" @keydown.enter.prevent="finishEdit(g, 'name')" />
+              </div>
+              <div v-else @click="startEdit(g, 'name')">{{ g.name }}</div>
+            </td>
+
+            <td>
+              <div v-if="isEditing(g.id, 'studentsCount')">
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'studentsCount')" @keydown.enter.prevent="finishEdit(g, 'studentsCount')" />
+              </div>
+              <div v-else @click="startEdit(g, 'studentsCount')">{{ g.studentsCount }}</div>
+            </td>
+
+            <td @click="startEdit(g, 'expelledStudents')">
+              <div v-if="isEditing(g.id, 'expelledStudents')">
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'expelledStudents')" @keydown.enter.prevent="finishEdit(g, 'expelledStudents')" />
+              </div>
+              <div v-else>{{ g.expelledStudents }}</div>
+            </td>
+
+            <td @click="startEdit(g, 'averageMark')">
+              <div v-if="isEditing(g.id, 'averageMark')">
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'averageMark')" @keydown.enter.prevent="finishEdit(g, 'averageMark')" />
+              </div>
+              <div v-else>{{ g.averageMark }}</div>
+            </td>
+
+            <td>
+              <div v-if="isEditing(g.id, 'formOfEducation')">
+                <select v-model="editing.value" @change="finishEdit(g, 'formOfEducation')" @blur="finishEdit(g, 'formOfEducation')">
+                  <option value="">--</option>
+                  <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
+                  <option value="FULL_TIME_EDUCATION">FULL_TIME_EDUCATION</option>
+                  <option value="EVENING_CLASSES">EVENING_CLASSES</option>
+                </select>
+              </div>
+              <div v-else @click="startEdit(g, 'formOfEducation')">{{ g.formOfEducation }}</div>
+            </td>
+            <td @click="startEdit(g, 'semesterEnum')">
+              <div v-if="isEditing(g.id, 'semesterEnum')">
+                <select v-model="editing.value" @change="finishEdit(g, 'semesterEnum')" @blur="finishEdit(g, 'semesterEnum')">
+                  <option value="">(null)</option>
+                  <option value="FIRST">FIRST</option>
+                  <option value="SECOND">SECOND</option>
+                  <option value="SEVENTH">SEVENTH</option>
+                </select>
+              </div>
+              <div v-else>{{ g.semesterEnum }}</div>
+            </td>
+
+            <td>
+              <div v-if="isEditing(g.id, 'groupAdmin.name')">
+                <input v-model="editing.value" @blur="finishEdit(g, 'groupAdmin.name')" @keydown.enter.prevent="finishEdit(g, 'groupAdmin.name')" />
+              </div>
+              <div v-else @click="startEdit(g, 'groupAdmin.name')">{{ g.groupAdmin?.name }}</div>
+            </td>
+
             <td class="actions">
               <button @click="viewGroup(g.id)">View</button>
               <button @click="openEdit(g)">Edit</button>
@@ -324,6 +375,50 @@ function changeSort(field) {
 function getNestedValue(obj, path) {
   if (!path) return undefined
   return path.split('.').reduce((o, key) => (o == null ? undefined : o[key]), obj)
+}
+
+const editing = reactive({ id: null, field: '', value: null })
+
+function isEditing(id, field) {
+  return editing.id === id && editing.field === field
+}
+
+function startEdit(obj, field) {
+  editing.id = obj.id
+  editing.field = field
+  const v = getNestedValue(obj, field)
+  editing.value = v == null ? '' : v
+}
+
+function setNestedValue(obj, path, value) {
+  const parts = path.split('.')
+  let cur = obj
+  for (let i = 0; i < parts.length - 1; i++) {
+    const p = parts[i]
+    if (cur[p] == null) cur[p] = {}
+    cur = cur[p]
+  }
+  cur[parts[parts.length - 1]] = value
+}
+
+async function finishEdit(originalGroup, field) {
+  const newValue = editing.value
+  editing.id = null
+  editing.field = ''
+  try {
+    const payload = JSON.parse(JSON.stringify(originalGroup))
+    setNestedValue(payload, field, (newValue === '' ? null : newValue))
+    delete payload.id
+    if (payload.semesterEnum === '') payload.semesterEnum = null
+    if (payload.groupAdmin && Object.keys(payload.groupAdmin).length === 0) payload.groupAdmin = null
+    await api.updateGroup(originalGroup.id, payload)
+    showToast('Обновлено')
+    fetchGroups()
+  } catch (e) {
+    console.error(e)
+    showToast('Не удалось сохранить изменения')
+    fetchGroups()
+  }
 }
 
 function compareValues(a, b) {
@@ -747,7 +842,7 @@ select {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  width: 200px; /* фиксированная ширина для всех селектов */
+  width: 200px;
   font-size: 14px;
 }
 
@@ -757,13 +852,11 @@ select:focus {
   outline: none;
 }
 
-/* Для админских селектов (EyeColor, HairColor, Nationality) можно подстроить ширину */
 .admin-nested select {
   width: 180px;
 }
 
 
-/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -801,7 +894,7 @@ select:focus {
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10000; /* выше всех других модалок */
+  z-index: 10000;
 }
 
 .modal.errors h3 {
