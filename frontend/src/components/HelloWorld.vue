@@ -139,7 +139,74 @@
       <aside class="side">
         <h3>Специальные операции</h3>
         <div class="special">
+          <div class="op">
+            <label>Count groups with semester &lt;</label>
+            <select v-model="special.semester" >
+              <option disabled value="">Выберите</option>
+              <option value="FIRST">FIRST</option>
+              <option value="SECOND">SECOND</option>
+              <option value="SEVENTH">SEVENTH</option>
+            </select>
+            <button @click="specialCountBySemester">Выполнить</button>
+            <div v-if="special.countResult !== null" class="op-result">Результат: {{ special.countResult }}</div>
+          </div>
+
+          <hr/>
+
+          <div class="op">
+            <label>Groups with admin id &lt;</label>
+            <input type="number" v-model.number="special.adminId" placeholder="admin id" />
+            <button @click="specialGroupsWithAdminLess">Выполнить</button>
+            <div v-if="special.adminGroups?.length" class="op-result">
+              Найдено: {{ special.adminGroups.length }}
+              <button @click="special.showAdminList = !special.showAdminList" style="margin-left:8px">
+                {{ special.showAdminList ? 'Скрыть' : 'Показать' }}
+              </button>
+              <ul v-if="special.showAdminList">
+                <li v-for="g in special.adminGroups" :key="g.id">
+                  id:{{g.id}} — {{ g.name }} — admin: {{ g.groupAdmin?.name ?? '(нет)' }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="op">
+            <label>Distinct shouldBeExpelled</label>
+            <button @click="specialDistinctShouldBeExpelled">Выполнить</button>
+            <div v-if="special.distinctShouldBeExpelled?.length" class="op-result">
+              <ul>
+                <li v-for="v in special.distinctShouldBeExpelled" :key="String(v)">{{ v }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="op">
+            <label>Add student to group (id)</label>
+            <input type="number" v-model.number="special.addStudentGroupId" placeholder="group id" />
+            <button @click="specialAddStudent">Добавить</button>
+            <div v-if="special.addStudentResult !== null" class="op-result">{{ special.addStudentResult }}</div>
+          </div>
+
+          <hr/>
+
+          <div class="op">
+            <label>Change form of education</label>
+            <input type="number" v-model.number="special.changeFormGroupId" placeholder="group id" />
+            <select v-model="special.newForm">
+              <option disabled value="">Выберите</option>
+              <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
+              <option value="FULL_TIME_EDUCATION">FULL_TIME_EDUCATION</option>
+              <option value="EVENING_CLASSES">EVENING_CLASSES</option>
+            </select>
+            <button @click="specialChangeForm">Изменить</button>
+            <div v-if="special.changeFormResult !== null" class="op-result">{{ special.changeFormResult }}</div>
+          </div>
         </div>
+
       </aside>
     </main>
 
@@ -479,7 +546,7 @@ const visibleGroups = computed(() => {
 
 function applyFilter() {
   page.value = 0
-  
+
 }
 
 function clearFilter() {
@@ -685,6 +752,86 @@ async function submitModal() {
   }
 }
 
+const special = reactive({
+  semester: '',
+  countResult: null,
+  adminId: null,
+  adminGroups: null,
+  showAdminList: false,
+  distinctShouldBeExpelled: [],
+  addStudentGroupId: null,
+  addStudentResult: null,
+  changeFormGroupId: null,
+  newForm: '',
+  changeFormResult: null
+})
+
+async function specialCountBySemester() {
+  try {
+    special.countResult = null
+    if (!special.semester) throw new Error('Выберите семестр')
+    const res = await api.specialCountBySemester(special.semester)
+    special.countResult = res
+  } catch (e) {
+    console.error(e)
+    showToast(e?.response?.data?.message || e.message || 'Ошибка специальной операции')
+  }
+}
+
+async function specialGroupsWithAdminLess() {
+  try {
+    special.adminGroups = null
+    special.showAdminList = false
+    if (special.adminId == null) throw new Error('Укажите adminId')
+    const res = await api.specialGroupsWithAdminLess(special.adminId)
+    special.adminGroups = res || []
+    if (!special.adminGroups.length) showToast('Ничего не найдено')
+  } catch (e) {
+    console.error(e)
+    showToast(e?.response?.data?.message || e.message || 'Ошибка специальной операции')
+  }
+}
+
+async function specialDistinctShouldBeExpelled() {
+  try {
+    special.distinctShouldBeExpelled = []
+    const res = await api.specialDistinctShouldBeExpelled()
+    special.distinctShouldBeExpelled = Array.isArray(res) ? res : (res?.data ?? [])
+  } catch (e) {
+    console.error(e)
+    showToast(e?.response?.data?.message || e.message || 'Ошибка специальной операции')
+  }
+}
+
+async function specialAddStudent() {
+  try {
+    special.addStudentResult = null
+    if (!special.addStudentGroupId) throw new Error('Укажите id группы')
+    const res = await api.addStudent(special.addStudentGroupId)
+    special.addStudentResult = typeof res === 'string' ? res : (res?.message ?? 'OK')
+    showToast('Студент добавлен')
+    fetchGroups()
+  } catch (e) {
+    console.error(e)
+    showToast(e?.response?.data?.message || e.message || 'Ошибка при добавлении студента')
+  }
+}
+
+async function specialChangeForm() {
+  try {
+    special.changeFormResult = null
+    if (!special.changeFormGroupId) throw new Error('Укажите id группы')
+    if (!special.newForm) throw new Error('Укажите новую форму обучения')
+    const res = await api.changeForm(special.changeFormGroupId, special.newForm)
+    special.changeFormResult = typeof res === 'string' ? res : (res?.message ?? 'OK')
+    showToast('Форма обучения изменена')
+    fetchGroups()
+  } catch (e) {
+    console.error(e)
+    showToast(e?.response?.data?.message || e.message || 'Ошибка при смене формы')
+  }
+}
+
 onMounted(() => {
   fetchGroups();
   fetchPersonsList()
@@ -758,7 +905,7 @@ button:hover {
 
 .filter select {
   text-align: center;
-  text-align-last: center;  
+  text-align-last: center;
 }
 
 

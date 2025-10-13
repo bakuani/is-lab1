@@ -9,6 +9,8 @@ import ru.ani.islab1.models.Coordinates;
 import ru.ani.islab1.models.Location;
 import ru.ani.islab1.models.Person;
 import ru.ani.islab1.models.StudyGroup;
+import ru.ani.islab1.models.enums.FormOfEducation;
+import ru.ani.islab1.models.enums.Semester;
 import ru.ani.islab1.repositories.CoordinatesRepository;
 import ru.ani.islab1.repositories.LocationRepository;
 import ru.ani.islab1.repositories.PersonRepository;
@@ -173,5 +175,41 @@ public class StudyGroupService {
         }
 
         return personRepository.save(managed);
+    }
+
+    @Transactional(readOnly = true)
+    public long countBySemesterLessThan(Semester semester) {
+        if (semester == null) return 0;
+        return repository.findAll().stream()
+                .filter(g -> g.getSemesterEnum() != null)
+                .filter(g -> g.getSemesterEnum().ordinal() < semester.ordinal())
+                .count();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudyGroup> groupsWithAdminIdLessThan(Integer adminId) {
+        if (adminId == null) return List.of();
+        return repository.findByGroupAdmin_IdLessThan(adminId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> distinctShouldBeExpelled() {
+        return repository.findDistinctShouldBeExpelled();
+    }
+
+    public StudyGroup addStudentToGroup(Integer groupId) {
+        StudyGroup g = repository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup not found with id " + groupId));
+        Long studentsCount = g.getStudentsCount();
+        if (studentsCount == null) studentsCount = 0L;
+        g.setStudentsCount(studentsCount + 1);
+        return repository.save(g);
+    }
+
+    public StudyGroup changeFormOfEducation(Integer groupId, FormOfEducation newForm) {
+        StudyGroup g = repository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup not found with id " + groupId));
+        g.setFormOfEducation(newForm);
+        return repository.save(g);
     }
 }
