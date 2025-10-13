@@ -12,7 +12,7 @@ export const fetchGroupById = (id) => api.get(`/studygroups/${id}`).then(res => 
 export const createGroup = (payload) => api.post('/studygroups', payload).then(res => res.data)
 export const updateGroup = (id, payload) => api.put(`/studygroups/${id}`, payload).then(res => res.data)
 export const deleteGroup = (id) => api.delete(`/studygroups/${id}`).then(res => res.data)
-export const addStudent = (id) => api.post(`/special/studygroups/{id}/add-student`).then(res => res.data)
+export const addStudent = (id) => api.post(`/special/studygroups/${id}/add-student`).then(res => res.data)
 export const changeForm = (id, form) => api.post(`/special/studygroups/${id}/change-form`, { form }).then(res => res.data)
 
 export const fetchPersons = () => api.get('/persons').then(res => res.data)

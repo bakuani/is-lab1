@@ -48,35 +48,40 @@
             <td>{{ g.id }}</td>
             <td>
               <div v-if="isEditing(g.id, 'name')">
-                <input v-model="editing.value" @blur="finishEdit(g, 'name')" @keydown.enter.prevent="finishEdit(g, 'name')" />
+                <input v-model="editing.value" @blur="finishEdit(g, 'name')"
+                       @keydown.enter.prevent="finishEdit(g, 'name')"/>
               </div>
               <div v-else @click="startEdit(g, 'name')">{{ g.name }}</div>
             </td>
 
             <td>
               <div v-if="isEditing(g.id, 'studentsCount')">
-                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'studentsCount')" @keydown.enter.prevent="finishEdit(g, 'studentsCount')" />
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'studentsCount')"
+                       @keydown.enter.prevent="finishEdit(g, 'studentsCount')"/>
               </div>
               <div v-else @click="startEdit(g, 'studentsCount')">{{ g.studentsCount }}</div>
             </td>
 
             <td @click="startEdit(g, 'expelledStudents')">
               <div v-if="isEditing(g.id, 'expelledStudents')">
-                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'expelledStudents')" @keydown.enter.prevent="finishEdit(g, 'expelledStudents')" />
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'expelledStudents')"
+                       @keydown.enter.prevent="finishEdit(g, 'expelledStudents')"/>
               </div>
               <div v-else>{{ g.expelledStudents }}</div>
             </td>
 
             <td @click="startEdit(g, 'averageMark')">
               <div v-if="isEditing(g.id, 'averageMark')">
-                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'averageMark')" @keydown.enter.prevent="finishEdit(g, 'averageMark')" />
+                <input type="number" v-model.number="editing.value" @blur="finishEdit(g, 'averageMark')"
+                       @keydown.enter.prevent="finishEdit(g, 'averageMark')"/>
               </div>
               <div v-else>{{ g.averageMark }}</div>
             </td>
 
             <td>
               <div v-if="isEditing(g.id, 'formOfEducation')">
-                <select v-model="editing.value" @change="finishEdit(g, 'formOfEducation')" @blur="finishEdit(g, 'formOfEducation')">
+                <select v-model="editing.value" @change="finishEdit(g, 'formOfEducation')"
+                        @blur="finishEdit(g, 'formOfEducation')">
                   <option value="">--</option>
                   <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
                   <option value="FULL_TIME_EDUCATION">FULL_TIME_EDUCATION</option>
@@ -87,7 +92,8 @@
             </td>
             <td @click="startEdit(g, 'semesterEnum')">
               <div v-if="isEditing(g.id, 'semesterEnum')">
-                <select v-model="editing.value" @change="finishEdit(g, 'semesterEnum')" @blur="finishEdit(g, 'semesterEnum')">
+                <select v-model="editing.value" @change="finishEdit(g, 'semesterEnum')"
+                        @blur="finishEdit(g, 'semesterEnum')">
                   <option value="">(null)</option>
                   <option value="FIRST">FIRST</option>
                   <option value="SECOND">SECOND</option>
@@ -99,7 +105,8 @@
 
             <td>
               <div v-if="isEditing(g.id, 'groupAdmin.name')">
-                <input v-model="editing.value" @blur="finishEdit(g, 'groupAdmin.name')" @keydown.enter.prevent="finishEdit(g, 'groupAdmin.name')" />
+                <input v-model="editing.value" @blur="finishEdit(g, 'groupAdmin.name')"
+                       @keydown.enter.prevent="finishEdit(g, 'groupAdmin.name')"/>
               </div>
               <div v-else @click="startEdit(g, 'groupAdmin.name')">{{ g.groupAdmin?.name }}</div>
             </td>
@@ -141,7 +148,7 @@
         <div class="special">
           <div class="op">
             <label>Count groups with semester &lt;</label>
-            <select v-model="special.semester" >
+            <select v-model="special.semester">
               <option disabled value="">Выберите</option>
               <option value="FIRST">FIRST</option>
               <option value="SECOND">SECOND</option>
@@ -155,7 +162,7 @@
 
           <div class="op">
             <label>Groups with admin id &lt;</label>
-            <input type="number" v-model.number="special.adminId" placeholder="admin id" />
+            <input type="number" v-model.number="special.adminId" placeholder="admin id"/>
             <button @click="specialGroupsWithAdminLess">Выполнить</button>
             <div v-if="special.adminGroups?.length" class="op-result">
               Найдено: {{ special.adminGroups.length }}
@@ -164,7 +171,7 @@
               </button>
               <ul v-if="special.showAdminList">
                 <li v-for="g in special.adminGroups" :key="g.id">
-                  id:{{g.id}} — {{ g.name }} — admin: {{ g.groupAdmin?.name ?? '(нет)' }}
+                  id:{{ g.id }} — {{ g.name }} — admin: {{ g.groupAdmin?.name ?? '(нет)' }}
                 </li>
               </ul>
             </div>
@@ -185,17 +192,33 @@
           <hr/>
 
           <div class="op">
-            <label>Add student to group (id)</label>
-            <input type="number" v-model.number="special.addStudentGroupId" placeholder="group id" />
-            <button @click="specialAddStudent">Добавить</button>
-            <div v-if="special.addStudentResult !== null" class="op-result">{{ special.addStudentResult }}</div>
+            <h4>➕ Добавить студента в группу</h4>
+
+            <div class="form-subsection">
+              <label>ID группы</label>
+              <input
+                  type="number"
+                  v-model.number="special.addStudentGroupId"
+                  placeholder="Введите ID группы"
+                  min="1"
+                  required
+              />
+            </div>
+
+            <button class="primary-btn" @click="specialAddStudent">
+              Добавить студента
+            </button>
+
+            <div v-if="special.addStudentResult !== null" class="op-result">
+              <p><strong>Результат:</strong> {{ special.addStudentResult }}</p>
+            </div>
           </div>
 
           <hr/>
 
           <div class="op">
             <label>Change form of education</label>
-            <input type="number" v-model.number="special.changeFormGroupId" placeholder="group id" />
+            <input type="number" v-model.number="special.changeFormGroupId" placeholder="group id"/>
             <select v-model="special.newForm">
               <option disabled value="">Выберите</option>
               <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
@@ -292,7 +315,7 @@
             <div class="form-row">
               <label>Name</label>
               <input v-model="form.groupAdmin.name" :disabled="modalMode==='view'" required
-                     @input="onAdminFieldChange" />
+                     @input="onAdminFieldChange"/>
             </div>
 
             <div class="form-row">
@@ -320,7 +343,7 @@
             <div class="form-row">
               <label>Weight</label>
               <input type="number" v-model.number="form.groupAdmin.weight" :disabled="modalMode==='view'" min="0"
-                     required @input="onAdminFieldChange" />
+                     required @input="onAdminFieldChange"/>
             </div>
 
             <div class="form-row">
@@ -337,19 +360,19 @@
             <div class="form-row">
               <label>X</label>
               <input type="number" v-model.number="form.groupAdmin.location.x" :disabled="modalMode==='view'" required
-                     @input="onAdminFieldChange" />
+                     @input="onAdminFieldChange"/>
             </div>
 
             <div class="form-row">
               <label>Y</label>
               <input type="number" v-model.number="form.groupAdmin.location.y" :disabled="modalMode==='view'" required
-                     @input="onAdminFieldChange" />
+                     @input="onAdminFieldChange"/>
             </div>
 
             <div class="form-row">
               <label>Name</label>
               <input v-model="form.groupAdmin.location.name" :disabled="modalMode==='view'" required
-                     @input="onAdminFieldChange" />
+                     @input="onAdminFieldChange"/>
             </div>
           </div>
 
@@ -452,7 +475,7 @@ function getNestedValue(obj, path) {
   return path.split('.').reduce((o, key) => (o == null ? undefined : o[key]), obj)
 }
 
-const editing = reactive({ id: null, field: '', value: null })
+const editing = reactive({id: null, field: '', value: null})
 
 function isEditing(id, field) {
   return editing.id === id && editing.field === field
