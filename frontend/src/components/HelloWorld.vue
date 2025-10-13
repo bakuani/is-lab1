@@ -224,12 +224,14 @@
             <h4>Admin</h4>
             <div class="form-row">
               <label>Name</label>
-              <input v-model="form.groupAdmin.name" :disabled="modalMode==='view'" required/>
+              <input v-model="form.groupAdmin.name" :disabled="modalMode==='view'" required
+                     @input="onAdminFieldChange" />
             </div>
 
             <div class="form-row">
               <label>Eye Color</label>
-              <select v-model="form.groupAdmin.eyeColor" :disabled="modalMode==='view'" required>
+              <select v-model="form.groupAdmin.eyeColor" :disabled="modalMode==='view'" required
+                      @change="onAdminFieldChange">
                 <option disabled value="">Выберите</option>
                 <option value="RED">RED</option>
                 <option value="GREEN">GREEN</option>
@@ -239,7 +241,8 @@
 
             <div class="form-row">
               <label>Hair Color</label>
-              <select v-model="form.groupAdmin.hairColor" :disabled="modalMode==='view'" required>
+              <select v-model="form.groupAdmin.hairColor" :disabled="modalMode==='view'" required
+                      @change="onAdminFieldChange">
                 <option disabled value="">Выберите</option>
                 <option value="RED">RED</option>
                 <option value="GREEN">GREEN</option>
@@ -250,12 +253,13 @@
             <div class="form-row">
               <label>Weight</label>
               <input type="number" v-model.number="form.groupAdmin.weight" :disabled="modalMode==='view'" min="0"
-                     required/>
-
+                     required @input="onAdminFieldChange" />
             </div>
+
             <div class="form-row">
               <label>Nationality</label>
-              <select v-model="form.groupAdmin.nationality" :disabled="modalMode==='view'" required>
+              <select v-model="form.groupAdmin.nationality" :disabled="modalMode==='view'" required
+                      @change="onAdminFieldChange">
                 <option disabled value="">Выберите</option>
                 <option value="INDIA">INDIA</option>
                 <option value="UNITED_KINGDOM">UNITED_KINGDOM</option>
@@ -263,18 +267,22 @@
               </select>
             </div>
 
-            <h5>Location</h5>
             <div class="form-row">
               <label>X</label>
-              <input type="number" v-model.number="form.groupAdmin.location.x" :disabled="modalMode==='view'" required/>
+              <input type="number" v-model.number="form.groupAdmin.location.x" :disabled="modalMode==='view'" required
+                     @input="onAdminFieldChange" />
             </div>
+
             <div class="form-row">
               <label>Y</label>
-              <input type="number" v-model.number="form.groupAdmin.location.y" :disabled="modalMode==='view'" required/>
+              <input type="number" v-model.number="form.groupAdmin.location.y" :disabled="modalMode==='view'" required
+                     @input="onAdminFieldChange" />
             </div>
+
             <div class="form-row">
               <label>Name</label>
-              <input v-model="form.groupAdmin.location.name" :disabled="modalMode==='view'" required/>
+              <input v-model="form.groupAdmin.location.name" :disabled="modalMode==='view'" required
+                     @input="onAdminFieldChange" />
             </div>
           </div>
 
@@ -566,15 +574,16 @@ function onAdminChange() {
 }
 
 function onAdminFieldChange() {
-  if (!adminOriginalSnapshot) return
-  const current = JSON.stringify(form.groupAdmin)
+  if (!adminOriginalSnapshot) return;
+  const current = JSON.stringify(form.groupAdmin);
   if (current !== adminOriginalSnapshot) {
-    form.groupAdmin.id = null
-    form.groupAdminId = null
-    adminOriginalSnapshot = null
-    showToast('Изменения админа будут сохранены как новый человек')
+    delete form.groupAdmin.id;
+    form.groupAdminId = null;
+    adminOriginalSnapshot = null;
+    showToast('Изменения админа будут сохранены как новый человек');
   }
 }
+
 
 function openCreate() {
   modalMode.value = 'create'
