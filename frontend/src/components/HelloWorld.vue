@@ -830,15 +830,15 @@ async function specialAddStudent() {
   try {
     special.addStudentResult = null
     if (!special.addStudentGroupId) throw new Error('Укажите id группы')
-    const res = await api.addStudent(special.addStudentGroupId)
+    const res = await api.addStudent(special.addStudentGroupId);
     special.addStudentResult = typeof res === 'string' ? res : (res?.message ?? 'OK')
     showToast('Студент добавлен')
-    fetchGroups()
+    fetchGroups();
   } catch (e) {
-    console.error(e)
-    showToast(e?.response?.data?.message || e.message || 'Ошибка при добавлении студента')
+    showToast(e?.response?.data || e.message);
   }
 }
+
 
 async function specialChangeForm() {
   try {

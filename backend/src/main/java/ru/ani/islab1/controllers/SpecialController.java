@@ -2,9 +2,12 @@ package ru.ani.islab1.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.StudyGroup;
 import ru.ani.islab1.models.enums.FormOfEducation;
 import ru.ani.islab1.models.enums.Semester;
@@ -47,15 +50,17 @@ public class SpecialController {
     }
 
     @PostMapping("/studygroups/{id}/add-student")
-    public ResponseEntity<StudyGroup> addStudentToGroup(@PathVariable("id") Integer id) {
+    public ResponseEntity<?> addStudentToGroup(@PathVariable("id") Integer id) {
         try {
             StudyGroup updated = service.addStudentToGroup(id);
             return ResponseEntity.ok(updated);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception ex) {
-            return ResponseEntity.status(500).build();
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(ex.getMessage());
         }
+
     }
 
     public static class ChangeFormDto {
