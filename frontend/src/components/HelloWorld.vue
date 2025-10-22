@@ -18,6 +18,90 @@
       </div>
     </header>
 
+    <div class="layout">
+      <aside class="side-panel">
+        <h3>Специальные операции</h3>
+
+        <div class="operation-selector">
+          <label>Выберите операцию:</label>
+          <select v-model="special.selectedOp">
+            <option disabled value="">-- Выберите --</option>
+            <option value="countBySemester">Count groups by semester</option>
+            <option value="groupsWithAdminLess">Groups with admin id &lt;</option>
+            <option value="distinctShouldBeExpelled">Distinct shouldBeExpelled</option>
+            <option value="addStudent">Добавить студента в группу</option>
+            <option value="changeForm">Change form of education</option>
+          </select>
+        </div>
+
+        <div class="op-fields">
+          <div v-if="special.selectedOp === 'countBySemester'" class="op">
+            <label>Semester &lt;</label>
+            <select v-model="special.semester">
+              <option disabled value="">Выберите</option>
+              <option value="FIRST">FIRST</option>
+              <option value="SECOND">SECOND</option>
+              <option value="SEVENTH">SEVENTH</option>
+            </select>
+            <button @click="specialCountBySemester">Выполнить</button>
+            <div v-if="special.countResult !== null" class="op-result">
+              Результат: {{ special.countResult }}
+            </div>
+          </div>
+
+          <div v-if="special.selectedOp === 'groupsWithAdminLess'" class="op">
+            <label>Admin id &lt;</label>
+            <input type="number" v-model.number="special.adminId" placeholder="admin id"/>
+            <button @click="specialGroupsWithAdminLess">Выполнить</button>
+            <div v-if="special.adminGroups?.length" class="op-result">
+              Найдено: {{ special.adminGroups.length }}
+              <button @click="special.showAdminList = !special.showAdminList" style="margin-left:8px">
+                {{ special.showAdminList ? 'Скрыть' : 'Показать' }}
+              </button>
+              <ul v-if="special.showAdminList">
+                <li v-for="g in special.adminGroups" :key="g.id">
+                  id: {{ g.id }} — {{ g.name }} — admin: {{ g.groupAdmin?.name ?? '(нет)' }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div v-if="special.selectedOp === 'distinctShouldBeExpelled'" class="op">
+            <button @click="specialDistinctShouldBeExpelled">Выполнить</button>
+            <div v-if="special.distinctShouldBeExpelled?.length" class="op-result">
+              <ul>
+                <li v-for="v in special.distinctShouldBeExpelled" :key="String(v)">{{ v }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <div v-if="special.selectedOp === 'addStudent'" class="op">
+            <label>ID группы</label>
+            <input type="number" v-model.number="special.addStudentGroupId" placeholder="Введите ID группы" min="1"/>
+            <button @click="specialAddStudent">Добавить</button>
+            <div v-if="special.addStudentResult !== null" class="op-result">
+              <strong>Результат:</strong> {{ special.addStudentResult }}
+            </div>
+          </div>
+
+          <div v-if="special.selectedOp === 'changeForm'" class="op">
+            <label>Group ID</label>
+            <input type="number" v-model.number="special.changeFormGroupId" placeholder="group id"/>
+            <label>New form</label>
+            <select v-model="special.newForm">
+              <option disabled value="">Выберите</option>
+              <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
+              <option value="FULL_TIME_EDUCATION">FULL_TIME_EDUCATION</option>
+              <option value="EVENING_CLASSES">EVENING_CLASSES</option>
+            </select>
+            <button @click="specialChangeForm">Изменить</button>
+            <div v-if="special.changeFormResult !== null" class="op-result">
+              {{ special.changeFormResult }}
+            </div>
+          </div>
+        </div>
+      </aside>
+
     <main>
       <section class="table-section">
         <table class="groups-table">
@@ -142,95 +226,6 @@
           </select>
         </div>
       </section>
-
-      <aside class="side">
-        <h3>Специальные операции</h3>
-        <div class="special">
-          <div class="op">
-            <label>Count groups with semester &lt;</label>
-            <select v-model="special.semester">
-              <option disabled value="">Выберите</option>
-              <option value="FIRST">FIRST</option>
-              <option value="SECOND">SECOND</option>
-              <option value="SEVENTH">SEVENTH</option>
-            </select>
-            <button @click="specialCountBySemester">Выполнить</button>
-            <div v-if="special.countResult !== null" class="op-result">Результат: {{ special.countResult }}</div>
-          </div>
-
-          <hr/>
-
-          <div class="op">
-            <label>Groups with admin id &lt;</label>
-            <input type="number" v-model.number="special.adminId" placeholder="admin id"/>
-            <button @click="specialGroupsWithAdminLess">Выполнить</button>
-            <div v-if="special.adminGroups?.length" class="op-result">
-              Найдено: {{ special.adminGroups.length }}
-              <button @click="special.showAdminList = !special.showAdminList" style="margin-left:8px">
-                {{ special.showAdminList ? 'Скрыть' : 'Показать' }}
-              </button>
-              <ul v-if="special.showAdminList">
-                <li v-for="g in special.adminGroups" :key="g.id">
-                  id:{{ g.id }} — {{ g.name }} — admin: {{ g.groupAdmin?.name ?? '(нет)' }}
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <hr/>
-
-          <div class="op">
-            <label>Distinct shouldBeExpelled</label>
-            <button @click="specialDistinctShouldBeExpelled">Выполнить</button>
-            <div v-if="special.distinctShouldBeExpelled?.length" class="op-result">
-              <ul>
-                <li v-for="v in special.distinctShouldBeExpelled" :key="String(v)">{{ v }}</li>
-              </ul>
-            </div>
-          </div>
-
-          <hr/>
-
-          <div class="op">
-            <h4>➕ Добавить студента в группу</h4>
-
-            <div class="form-subsection">
-              <label>ID группы</label>
-              <input
-                  type="number"
-                  v-model.number="special.addStudentGroupId"
-                  placeholder="Введите ID группы"
-                  min="1"
-                  required
-              />
-            </div>
-
-            <button class="primary-btn" @click="specialAddStudent">
-              Добавить студента
-            </button>
-
-            <div v-if="special.addStudentResult !== null" class="op-result">
-              <p><strong>Результат:</strong> {{ special.addStudentResult }}</p>
-            </div>
-          </div>
-
-          <hr/>
-
-          <div class="op">
-            <label>Change form of education</label>
-            <input type="number" v-model.number="special.changeFormGroupId" placeholder="group id"/>
-            <select v-model="special.newForm">
-              <option disabled value="">Выберите</option>
-              <option value="DISTANCE_EDUCATION">DISTANCE_EDUCATION</option>
-              <option value="FULL_TIME_EDUCATION">FULL_TIME_EDUCATION</option>
-              <option value="EVENING_CLASSES">EVENING_CLASSES</option>
-            </select>
-            <button @click="specialChangeForm">Изменить</button>
-            <div v-if="special.changeFormResult !== null" class="op-result">{{ special.changeFormResult }}</div>
-          </div>
-        </div>
-
-      </aside>
     </main>
 
     <div v-if="showModal" class="modal-backdrop">
@@ -397,6 +392,7 @@
     </div>
 
     <div class="toast" v-if="toast.message">{{ toast.message }}</div>
+    </div>
   </div>
 </template>
 
@@ -786,7 +782,8 @@ const special = reactive({
   addStudentResult: null,
   changeFormGroupId: null,
   newForm: '',
-  changeFormResult: null
+  changeFormResult: null,
+  selectedOp: ''
 })
 
 async function specialCountBySemester() {
@@ -1090,5 +1087,110 @@ select:focus {
   margin-bottom: 6px;
   color: #d32f2f;
   font-weight: 500;
+}
+
+.operation-selector {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.op-fields {
+  background: #fff0f5;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.op label {
+  font-weight: 500;
+  margin-right: 6px;
+}
+
+.op button {
+  margin-left: 6px;
+}
+
+.op-result {
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: #ffe4e1;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 20px;
+}
+
+/* Левая панель */
+.side-panel {
+  width: 280px;
+  background: #fafafa;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  padding: 16px;
+  flex-shrink: 0;
+}
+
+.side-panel h3 {
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.operation-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.op-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.op {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+}
+
+.op label {
+  font-weight: 500;
+}
+
+.op button {
+  align-self: flex-start;
+  background-color: #ff6b81;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.op button:hover {
+  background-color: #ff4d6d;
+}
+
+.op-result {
+  background: #ffe8ec;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
 }
 </style>
