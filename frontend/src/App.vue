@@ -1,9 +1,9 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import StudyGroups from "./components/StudyGroups.vue";
 </script>
 
 <template>
-  <HelloWorld msg="Vite + Vue" />
+  <StudyGroups msg="Vite + Vue" />
 </template>
 
 <style scoped>
