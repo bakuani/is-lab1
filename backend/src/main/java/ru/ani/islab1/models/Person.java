@@ -27,7 +27,7 @@ public class Person {
     private Color eyeColor;
 
     @Enumerated(EnumType.STRING)
-    private Color hairColor; // nullable
+    private Color hairColor;
 
     @NotNull
     @Valid
@@ -39,5 +39,5 @@ public class Person {
     private Float weight;
 
     @Enumerated(EnumType.STRING)
-    private Country nationality; // nullable
+    private Country nationality;
 }

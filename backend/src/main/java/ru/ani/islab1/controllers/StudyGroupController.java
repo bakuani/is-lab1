@@ -36,7 +36,8 @@ public class StudyGroupController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<StudyGroup> update(@PathVariable Integer id, @Valid @RequestBody StudyGroup studyGroup) {
+    public ResponseEntity<StudyGroup> update(@PathVariable Integer id,
+                                             @Valid @RequestBody StudyGroup studyGroup) {
         StudyGroup updated = service.update(id, studyGroup);
         return ResponseEntity.ok(updated);
     }

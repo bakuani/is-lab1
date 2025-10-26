@@ -2,7 +2,6 @@ package ru.ani.islab1.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.ani.islab1.models.Location;
-import ru.ani.islab1.models.Person;
 
 import java.util.Optional;
 

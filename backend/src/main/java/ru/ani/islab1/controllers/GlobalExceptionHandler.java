@@ -1,4 +1,4 @@
-package ru.ani.islab1.exceptions;
+package ru.ani.islab1.controllers;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolation;
@@ -6,6 +6,8 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
+import ru.ani.islab1.exceptions.ResourceNotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;

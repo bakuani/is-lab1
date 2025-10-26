@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
+import ru.ani.islab1.exceptions.ErrorMessages;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.Coordinates;
 import ru.ani.islab1.models.Location;
@@ -40,11 +41,15 @@ public class StudyGroupService {
     public StudyGroup update(Integer id, StudyGroup updated) {
         StudyGroup existing = getById(id);
 
-        if (updated.getName() != null) existing.setName(updated.getName());
-        if (updated.getCoordinates() != null)
+        if (updated.getName() != null) {
+            existing.setName(updated.getName());
+        }
+        if (updated.getCoordinates() != null) {
             existing.setCoordinates(findOrCreateCoordinates(updated.getCoordinates()));
-        if (updated.getGroupAdmin() != null)
+        }
+        if (updated.getGroupAdmin() != null) {
             existing.setGroupAdmin(findOrCreatePerson(updated.getGroupAdmin()));
+        }
 
         existing.setStudentsCount(updated.getStudentsCount());
         existing.setExpelledStudents(updated.getExpelledStudents());
@@ -59,7 +64,7 @@ public class StudyGroupService {
 
     public StudyGroup getById(Integer id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не существует " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(id)));
     }
 
     public List<StudyGroup> getAll() {
@@ -67,62 +72,67 @@ public class StudyGroupService {
     }
 
     public void delete(Integer id) {
-            StudyGroup group = repository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("StudyGroup not found"));
+        StudyGroup group = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.ID_NULL.format()));
 
-            if (repository.existsByCoordinatesAndIdNot(group.getCoordinates(), id)) {
-                throw new CannotDeleteStudyGroupException(
-                        "Невозможно удалить: Такие координаты используются другой группой"
-                );
-            }
+        if (repository.existsByCoordinatesAndIdNot(group.getCoordinates(), id)) {
+            throw new CannotDeleteStudyGroupException(
+                    ErrorMessages.COORDINATES_IN_USE.format());
+        }
 
-            if (group.getGroupAdmin().getLocation() != null &&
-                    personRepository.existsByLocationAndIdNot(group.getGroupAdmin().getLocation(), id)) {
-                throw new CannotDeleteStudyGroupException(
-                        "Невозможно удалить: Такая локация используется другим админом"
-                );
-            }
+        if (group.getGroupAdmin().getLocation() != null &&
+                personRepository.existsByLocationAndIdNot(group.getGroupAdmin().getLocation(), id)) {
+            throw new CannotDeleteStudyGroupException(
+                    ErrorMessages.LOCATION_IN_USE.format());
+        }
 
-            if (group.getGroupAdmin() != null &&
-                    repository.existsByGroupAdminAndIdNot(group.getGroupAdmin(), id)) {
-                throw new CannotDeleteStudyGroupException(
-                        "Невозможно удалить: Админ привязан к другой группе"
-                );
-            }
+        if (group.getGroupAdmin() != null &&
+                repository.existsByGroupAdminAndIdNot(group.getGroupAdmin(), id)) {
+            throw new CannotDeleteStudyGroupException(
+                    ErrorMessages.GROUP_ADMIN_USED.format());
+        }
 
-            repository.delete(group);
+        repository.delete(group);
     }
 
 
     private Coordinates findOrCreateCoordinates(Coordinates incoming) {
-        if (incoming == null) return null;
+        if (incoming == null) {
+            return null;
+        }
 
         Double x = incoming.getX();
         Double y = incoming.getY();
 
-        if (x == null || y == null)
-            throw new IllegalArgumentException("Coordinates должны сожержать оба x и y");
+        if (x == null || y == null) {
+            throw new IllegalArgumentException(ErrorMessages.COORDINATES_MISSING.format());
+        }
 
         return coordinatesRepository.findByXAndY(x, y)
                 .orElseGet(() -> coordinatesRepository.save(new Coordinates(null, x, y)));
     }
 
     private Location findOrCreateLocation(Location loc) {
-        if (loc == null) return null;
+        if (loc == null) {
+            return null;
+        }
 
         Long x = loc.getX();
         Double y = loc.getY();
         String name = loc.getName();
 
-        if (x == null || y == null || name == null)
-            throw new IllegalArgumentException("Location должен содержать x, y и name");
+        if (x == null || y == null || name == null) {
+            throw new IllegalArgumentException(ErrorMessages.LOCATION_INVALID.format());
+        }
 
         return locationRepository.findByXAndYAndName(x, y, name)
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
     }
 
     private Person findOrCreatePerson(Person incoming) {
-        if (incoming == null) return null;
+        if (incoming == null) {
+            return null;
+        }
 
         Location loc = findOrCreateLocation(incoming.getLocation());
         incoming.setLocation(loc);
@@ -147,27 +157,44 @@ public class StudyGroupService {
     }
 
     private Person mergePerson(Person incoming) {
-        if (incoming.getId() == null)
-            throw new IllegalArgumentException("Person id не может быть null");
+        if (incoming.getId() == null) {
+            throw new IllegalArgumentException(ErrorMessages.PERSON_ID_NULL.format());
+        }
 
         Person managed = personRepository.findById(incoming.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person с таким id не найден " + incoming.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.PERSON_NOT_FOUND.format(incoming.getId())));
 
-        if (incoming.getName() != null) managed.setName(incoming.getName());
-        if (incoming.getWeight() != null) managed.setWeight(incoming.getWeight());
-        if (incoming.getEyeColor() != null) managed.setEyeColor(incoming.getEyeColor());
-        if (incoming.getHairColor() != null) managed.setHairColor(incoming.getHairColor());
-        if (incoming.getNationality() != null) managed.setNationality(incoming.getNationality());
+        if (incoming.getName() != null){
+            managed.setName(incoming.getName());
+        }
+        if (incoming.getWeight() != null) {
+            managed.setWeight(incoming.getWeight());
+        }
+        if (incoming.getEyeColor() != null) {
+            managed.setEyeColor(incoming.getEyeColor());
+        }
+        if (incoming.getHairColor() != null) {
+            managed.setHairColor(incoming.getHairColor());
+        }
+        if (incoming.getNationality() != null) {
+            managed.setNationality(incoming.getNationality());
+        }
 
         if (incoming.getLocation() != null) {
             Location locIncoming = incoming.getLocation();
             Location managedLoc;
             if (locIncoming.getId() != null) {
                 managedLoc = locationRepository.findById(locIncoming.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Location not found with id " + locIncoming.getId()));
-                if (locIncoming.getX() != null) managedLoc.setX(locIncoming.getX());
-                if (locIncoming.getY() != null) managedLoc.setY(locIncoming.getY());
-                if (locIncoming.getName() != null) managedLoc.setName(locIncoming.getName());
+                        .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.LOCATION_NOT_FOUND.format(locIncoming.getId())));
+                if (locIncoming.getX() != null) {
+                    managedLoc.setX(locIncoming.getX());
+                }
+                if (locIncoming.getY() != null) {
+                    managedLoc.setY(locIncoming.getY());
+                }
+                if (locIncoming.getName() != null) {
+                    managedLoc.setName(locIncoming.getName());
+                }
             } else {
                 managedLoc = findOrCreateLocation(locIncoming);
             }
@@ -179,7 +206,9 @@ public class StudyGroupService {
 
     @Transactional(readOnly = true)
     public long countBySemesterLessThan(Semester semester) {
-        if (semester == null) return 0;
+        if (semester == null) {
+            return 0;
+        }
         return repository.findAll().stream()
                 .filter(g -> g.getSemesterEnum() != null)
                 .filter(g -> g.getSemesterEnum().ordinal() < semester.ordinal())
@@ -188,7 +217,9 @@ public class StudyGroupService {
 
     @Transactional(readOnly = true)
     public List<StudyGroup> groupsWithAdminIdLessThan(Integer adminId) {
-        if (adminId == null) return List.of();
+        if (adminId == null) {
+            return List.of();
+        }
         return repository.findByGroupAdmin_IdLessThan(adminId);
     }
 
@@ -198,18 +229,20 @@ public class StudyGroupService {
     }
 
     public StudyGroup addStudentToGroup(Integer groupId) {
-        StudyGroup g = repository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не найден " + groupId));
-        Long studentsCount = g.getStudentsCount();
-        if (studentsCount == null) studentsCount = 0L;
-        g.setStudentsCount(studentsCount + 1);
-        return repository.save(g);
+        StudyGroup group = repository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(groupId)));
+        Long studentsCount = group.getStudentsCount();
+        if (studentsCount == null) {
+            studentsCount = 0L;
+        }
+        group.setStudentsCount(studentsCount + 1);
+        return repository.save(group);
     }
 
     public StudyGroup changeFormOfEducation(Integer groupId, FormOfEducation newForm) {
-        StudyGroup g = repository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не найден " + groupId));
-        g.setFormOfEducation(newForm);
-        return repository.save(g);
+        StudyGroup group = repository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(groupId)));
+        group.setFormOfEducation(newForm);
+        return repository.save(group);
     }
 }
