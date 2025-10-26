@@ -59,7 +59,7 @@ public class StudyGroupService {
 
     public StudyGroup getById(Integer id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не существует " + id));
     }
 
     public List<StudyGroup> getAll() {
@@ -72,21 +72,21 @@ public class StudyGroupService {
 
             if (repository.existsByCoordinatesAndIdNot(group.getCoordinates(), id)) {
                 throw new CannotDeleteStudyGroupException(
-                        "Cannot delete: Coordinates are used by another study group"
+                        "Невозможно удалить: Такие координаты используются другой группой"
                 );
             }
 
             if (group.getGroupAdmin().getLocation() != null &&
                     personRepository.existsByLocationAndIdNot(group.getGroupAdmin().getLocation(), id)) {
                 throw new CannotDeleteStudyGroupException(
-                        "Cannot delete: Location is used by another person"
+                        "Невозможно удалить: Такая локация используется другим админом"
                 );
             }
 
             if (group.getGroupAdmin() != null &&
                     repository.existsByGroupAdminAndIdNot(group.getGroupAdmin(), id)) {
                 throw new CannotDeleteStudyGroupException(
-                        "Cannot delete: Admin is assigned to another study group"
+                        "Невозможно удалить: Админ привязан к другой группе"
                 );
             }
 
@@ -101,7 +101,7 @@ public class StudyGroupService {
         Double y = incoming.getY();
 
         if (x == null || y == null)
-            throw new IllegalArgumentException("Coordinates must contain both x and y");
+            throw new IllegalArgumentException("Coordinates должны сожержать оба x и y");
 
         return coordinatesRepository.findByXAndY(x, y)
                 .orElseGet(() -> coordinatesRepository.save(new Coordinates(null, x, y)));
@@ -115,7 +115,7 @@ public class StudyGroupService {
         String name = loc.getName();
 
         if (x == null || y == null || name == null)
-            throw new IllegalArgumentException("Location must contain x, y and name");
+            throw new IllegalArgumentException("Location должен содержать x, y и name");
 
         return locationRepository.findByXAndYAndName(x, y, name)
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
@@ -148,10 +148,10 @@ public class StudyGroupService {
 
     private Person mergePerson(Person incoming) {
         if (incoming.getId() == null)
-            throw new IllegalArgumentException("Person id must not be null for merge");
+            throw new IllegalArgumentException("Person id не может быть null");
 
         Person managed = personRepository.findById(incoming.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person not found with id " + incoming.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Person с таким id не найден " + incoming.getId()));
 
         if (incoming.getName() != null) managed.setName(incoming.getName());
         if (incoming.getWeight() != null) managed.setWeight(incoming.getWeight());
@@ -199,7 +199,7 @@ public class StudyGroupService {
 
     public StudyGroup addStudentToGroup(Integer groupId) {
         StudyGroup g = repository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup not found with id " + groupId));
+                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не найден " + groupId));
         Long studentsCount = g.getStudentsCount();
         if (studentsCount == null) studentsCount = 0L;
         g.setStudentsCount(studentsCount + 1);
@@ -208,7 +208,7 @@ public class StudyGroupService {
 
     public StudyGroup changeFormOfEducation(Integer groupId, FormOfEducation newForm) {
         StudyGroup g = repository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup not found with id " + groupId));
+                .orElseThrow(() -> new ResourceNotFoundException("StudyGroup с таким id не найден " + groupId));
         g.setFormOfEducation(newForm);
         return repository.save(g);
     }

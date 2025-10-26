@@ -37,15 +37,15 @@ public class StudyGroup {
     private Date creationDate = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
 
     @NotNull
-    @Min(value = 1, message = "Students Count ≥ 1")
+    @Min(value = 1, message = "Students Count должно быть ≥ 1")
     private Long studentsCount;
 
     @NotNull
-    @Min(value = 0, message = "Expelled Students ≥ 0")
+    @Min(value = 0, message = "Expelled Students должно быть ≥ 0")
     private Integer expelledStudents;
 
     @NotNull
-    @Min(value = 0, message = "Transferred Students ≥ 0")
+    @Min(value = 0, message = "Transferred Students должно быть ≥ 0")
     private Long transferredStudents;
 
     @NotNull(message = "Form of Education обязательно")
@@ -53,11 +53,11 @@ public class StudyGroup {
     private FormOfEducation formOfEducation;
 
     @NotNull
-    @Min(value = 1, message = "Should Be Expelled ≥ 1")
+    @Min(value = 1, message = "Should Be Expelled должно быть ≥ 1")
     private Long shouldBeExpelled;
 
     @NotNull
-    @Min(value = 1, message = "Average Mark ≥ 1")
+    @Min(value = 1, message = "Average Mark должно быть ≥ 1")
     private Long averageMark;
 
     @Enumerated(EnumType.STRING)
