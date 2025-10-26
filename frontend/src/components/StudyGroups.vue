@@ -366,7 +366,7 @@ async function onSpecialCountBySemester(semester) {
     const res = await api.specialCountBySemester(semester)
     special.countResult = res
   } catch (e) {
-    showToast(e?.message || 'Ошибка специальной операции')
+    showToast('Ошибка специальной операции')
   }
 }
 
@@ -377,7 +377,7 @@ async function onSpecialGroupsWithAdminLess(adminId) {
     special.adminGroups = res || []
     if (!special.adminGroups.length) showToast('Ничего не найдено')
   } catch (e) {
-    showToast(e?.message || 'Ошибка специальной операции')
+    showToast('Ошибка специальной операции')
   }
 }
 
@@ -397,7 +397,7 @@ async function onSpecialAddStudent(groupId) {
     showToast('Студент добавлен')
     fetchGroups()
   } catch (e) {
-    showToast(e?.message || 'Ошибка при добавлении студента')
+    showToast('Ошибка при добавлении студента, группы с таким id нет')
   }
 }
 
@@ -408,7 +408,7 @@ async function onSpecialChangeForm({ groupId, newForm }) {
     showToast('Форма обучения изменена')
     fetchGroups()
   } catch (e) {
-    showToast(e?.message || 'Ошибка при смене формы')
+    showToast('Ошибка при смене формы')
   }
 }
 </script>
