@@ -65,7 +65,7 @@ public class StudyGroup {
 
     @NotNull
     @Valid
-    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin;
 }

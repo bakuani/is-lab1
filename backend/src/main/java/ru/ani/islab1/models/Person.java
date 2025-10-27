@@ -31,11 +31,11 @@ public class Person {
 
     @NotNull
     @Valid
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "location_id")
     private Location location;
 
-    @Min(value = 1, message = "Weight ≥ 1")
+    @Min(value = 1, message = "Weight должно быть ≥ 1")
     private Float weight;
 
     @Enumerated(EnumType.STRING)
