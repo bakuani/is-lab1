@@ -42,7 +42,7 @@ public class SpecialController {
     }
 
     @PostMapping("/studygroups/{id}/add-student")
-    public ResponseEntity<?> addStudentToGroup(@PathVariable("id") @NotNull @Positive Integer id) {
+    public ResponseEntity<StudyGroup> addStudentToGroup(@PathVariable("id") @NotNull @Positive Integer id) {
         StudyGroup updated = service.addStudentToGroup(id);
         return ResponseEntity.ok(updated);
     }
