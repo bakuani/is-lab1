@@ -4,6 +4,16 @@
       <h1>StudyGroups — Управление группами</h1>
       <div class="controls">
         <button @click="openCreate">Создать группу</button>
+          <button @click="triggerFileInputClick" class="import-btn">Импорт (JSON)</button>
+          <input
+              type="file"
+              ref="fileInputRef"
+              @change="handleFileImport"
+              accept=".json,application/json"
+              style="display: none"
+          />
+
+        <button @click="showHistoryModal = true" class="history-btn">История импорта</button>
 
         <div class="filter">
           <select v-model="filterField">
@@ -69,6 +79,11 @@
         @confirm="performDelete"
     />
 
+    <ImportHistoryModal
+        :show="showHistoryModal"
+        @close="showHistoryModal = false"
+    />
+
     <Toast :message="toast.message" />
   </div>
 </template>
@@ -83,6 +98,7 @@ import GroupModal from './GroupModal.vue'
 import PaginationControls from './PaginationControls.vue'
 import Toast from './Toast.vue'
 import ConfirmModal from './ConfirmModal.vue'
+import ImportHistoryModal from './ImportHistoryModal.vue'
 
 const groups = ref([])
 const persons = ref([])
@@ -100,11 +116,74 @@ const deleteId = ref(null)
 const showModal = ref(false)
 const modalMode = ref('view')
 
+const fileInputRef = ref(null)
+
+const showHistoryModal = ref(false)
+
 const toast = reactive({ message: '', timeout: null })
 function showToast(msg, ms = 4000) {
   clearTimeout(toast.timeout)
   toast.message = msg
   toast.timeout = setTimeout(() => (toast.message = ''), ms)
+}
+
+async function handleFileImport(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+
+  reader.onload = async (e) => {
+    try {
+      const fileContent = e.target.result
+      const groupsToImport = JSON.parse(fileContent)
+
+      if (!Array.isArray(groupsToImport)) {
+        throw new Error('Файл должен содержать JSON-массив (список) групп.')
+      }
+
+      const imported = await api.importGroups(groupsToImport)
+
+      showToast(`Успешно импортировано ${imported.length} групп.`)
+      fetchGroups()
+
+    } catch (error) {
+      console.error('Ошибка импорта:', error)
+      let errorMessage = 'Ошибка импорта. '
+
+      if (error.response?.data) {
+        const errors = error.response.data
+        if (typeof errors === 'object' && errors !== null) {
+          errorMessage += Object.values(errors).join(' ')
+        } else {
+          errorMessage += String(errors)
+        }
+      } else {
+        errorMessage += error.message
+      }
+
+      showToast(errorMessage, 6000)
+    } finally {
+      if (event.target) {
+        event.target.value = null
+      }
+    }
+  }
+
+  reader.onerror = () => {
+    showToast('Не удалось прочитать файл.', 5000)
+    if (event.target) {
+      event.target.value = null
+    }
+  }
+
+  reader.readAsText(file)
+}
+
+function triggerFileInputClick() {
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
 }
 
 const form = reactive({
@@ -451,6 +530,14 @@ button:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.import-btn {
+  background: linear-gradient(45deg, #ff02a8, #bd7bff);
+}
+
+.history-btn {
+  background: linear-gradient(45deg, #ffa0f0, #8784ff);
+}
+
 .filter input,
 .form-row input,
 .form-row select,
@@ -498,5 +585,4 @@ select {
   padding: 6px 10px;
   border-radius: 6px;
 }
-
 </style>

@@ -14,6 +14,8 @@ export const updateGroup = (id, payload) => api.put(`/studygroups/${id}`, payloa
 export const deleteGroup = (id) => api.delete(`/studygroups/${id}`).then(res => res.data)
 export const addStudent = (id) => api.post(`/special/studygroups/${id}/add-student`).then(res => res.data)
 export const changeForm = (id, form) => api.post(`/special/studygroups/${id}/change-form`, { form }).then(res => res.data)
+export const importGroups = (groupsArray) => api.post('/studygroups/import', groupsArray).then(res => res.data)
+export const fetchImportHistory = () => api.get('/import-history').then(res => res.data)
 
 export const fetchPersons = () => api.get('/persons').then(res => res.data)
 

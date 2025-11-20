@@ -7,6 +7,7 @@
         <th @click="$emit('change-sort', 'name')">Name</th>
         <th @click="$emit('change-sort', 'studentsCount')">Students</th>
         <th @click="$emit('change-sort', 'expelledStudents')">Expelled</th>
+        <th @click="$emit('change-sort', 'shouldBeExpelled')">Should Be Expelled</th>
         <th @click="$emit('change-sort', 'averageMark')">Average Mark</th>
         <th @click="$emit('change-sort', 'formOfEducation')">Form</th>
         <th @click="$emit('change-sort', 'semesterEnum')">Semester</th>
@@ -37,6 +38,13 @@
             <input type="number" v-model.number="editing.value" @blur="saveEdit(g, 'expelledStudents')" @keydown.enter.prevent="saveEdit(g, 'expelledStudents')" />
           </div>
           <div v-else @click="startEdit(g, 'expelledStudents')">{{ g.expelledStudents }}</div>
+        </td>
+
+        <td>
+          <div v-if="isEditing(g.id, 'shouldBeExpelled')">
+            <input type="number" v-model.number="editing.value" @blur="saveEdit(g, 'shouldBeExpelled')" @keydown.enter.prevent="saveEdit(g, 'shouldBeExpelled')" />
+          </div>
+          <div v-else @click="startEdit(g, 'shouldBeExpelled')">{{ g.shouldBeExpelled }}</div>
         </td>
 
         <td>
@@ -89,11 +97,12 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-const props = defineProps({ groups: { type: Array, default: () => [] }, sortField: String, sortDir: String })
+import {reactive} from 'vue'
+
+const props = defineProps({groups: {type: Array, default: () => []}, sortField: String, sortDir: String})
 const emit = defineEmits(['change-sort', 'update-group', 'view-group', 'open-edit', 'confirm-delete'])
 
-const editing = reactive({ id: null, field: '', value: null })
+const editing = reactive({id: null, field: '', value: null})
 
 function isEditing(id, field) {
   return editing.id === id && editing.field === field
@@ -111,7 +120,7 @@ function startEdit(obj, field) {
 }
 
 function saveEdit(originalGroup, field) {
-  emit('update-group', { id: originalGroup.id, field, value: editing.value })
+  emit('update-group', {id: originalGroup.id, field, value: editing.value})
   editing.id = null
   editing.field = ''
   editing.value = null
@@ -158,11 +167,12 @@ function saveEdit(originalGroup, field) {
 .actions button {
   padding: 6px 8px;
   border-radius: 8px;
-  background: linear-gradient(45deg,#6b7280,#9ca3af);
+  background: linear-gradient(45deg, #6b7280, #9ca3af);
   color: white;
   border: none;
   cursor: pointer;
 }
+
 .actions button:hover {
   transform: translateY(-1px);
 }
@@ -173,5 +183,4 @@ function saveEdit(originalGroup, field) {
   border-radius: 4px;
   padding: 6px;
 }
-
 </style>

@@ -6,6 +6,7 @@ import ru.ani.islab1.models.Person;
 import ru.ani.islab1.models.StudyGroup;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import ru.ani.islab1.models.enums.FormOfEducation;
 
 import java.util.List;
 
@@ -17,6 +18,10 @@ public interface StudyGroupRepository extends JpaRepository<StudyGroup, Integer>
 
     List<StudyGroup> findByGroupAdmin_IdLessThan(Integer adminId);
 
-    @Query("select distinct sg.shouldBeExpelled from StudyGroup sg where sg.shouldBeExpelled is not null")
+    @Query("SELECT DISTINCT s.shouldBeExpelled FROM StudyGroup s")
     List<Long> findDistinctShouldBeExpelled();
+
+    boolean existsByNameAndFormOfEducation(String name, FormOfEducation formOfEducation);
+
+    boolean existsByNameAndFormOfEducationAndIdNot(String name, FormOfEducation formOfEducation, Integer id);
 }
