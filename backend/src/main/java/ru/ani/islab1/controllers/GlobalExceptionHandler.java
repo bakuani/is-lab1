@@ -5,8 +5,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -85,7 +88,6 @@ public class GlobalExceptionHandler {
         String targetType = ex.getTargetType().getSimpleName();
         errors.put(fieldName, "Недопустимое значение '" + invalidValue + "' для поля типа " + targetType);
 
-        
         if (isImportRequest(request)) {
             importHistoryService.logFailure(DUMMY_USER, errors.toString());
         }
@@ -105,11 +107,22 @@ public class GlobalExceptionHandler {
         Map<String, String> body = new HashMap<>();
         body.put("error", ex.getMessage());
 
-        
         if (isImportRequest(request)) {
             importHistoryService.logFailure(DUMMY_USER, "Duplicate error: " + ex.getMessage());
         }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler({
+            ConcurrencyFailureException.class,
+            CannotAcquireLockException.class,
+            TransactionSystemException.class
+    })
+    public ResponseEntity<?> handleConcurrencyFailure(Exception e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", "Конфликт транзакций (попробуйте снова)"
+                ));
     }
 }

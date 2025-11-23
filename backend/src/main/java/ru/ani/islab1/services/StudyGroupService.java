@@ -1,10 +1,15 @@
 package ru.ani.islab1.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
-import ru.ani.islab1.exceptions.DuplicateEntityException; 
+import ru.ani.islab1.exceptions.DuplicateEntityException;
 import ru.ani.islab1.exceptions.ErrorMessages;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.Coordinates;
@@ -21,11 +26,9 @@ import ru.ani.islab1.repositories.StudyGroupRepository;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class StudyGroupService {
 
     private final StudyGroupRepository repository;
@@ -33,7 +36,7 @@ public class StudyGroupService {
     private final PersonRepository personRepository;
     private final LocationRepository locationRepository;
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
     public List<StudyGroup> importGroups(List<StudyGroup> studyGroups) {
         if (studyGroups == null || studyGroups.isEmpty()) {
             return List.of();
@@ -42,22 +45,28 @@ public class StudyGroupService {
         List<StudyGroup> savedGroups = new ArrayList<>();
 
         for (StudyGroup sg : studyGroups) {
-            
             sg.setId(null);
-            if (sg.getCoordinates() != null) sg.getCoordinates().setId(null);
+            if (sg.getCoordinates() != null) {
+                sg.getCoordinates().setId(null);
+            }
             if (sg.getGroupAdmin() != null) {
                 sg.getGroupAdmin().setId(null);
                 if (sg.getGroupAdmin().getLocation() != null) {
                     sg.getGroupAdmin().getLocation().setId(null);
                 }
             }
-            
             savedGroups.add(this.create(sg));
         }
 
         return savedGroups;
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Retryable(
+            retryFor = { ConcurrencyFailureException.class, CannotAcquireLockException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100)
+    )
     public StudyGroup create(StudyGroup sg) {
         checkUniqueStudyGroup(sg.getName(), sg.getFormOfEducation(), null);
         sg.setCoordinates(findOrCreateCoordinates(sg.getCoordinates()));
@@ -66,6 +75,7 @@ public class StudyGroupService {
         return repository.save(sg);
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public StudyGroup update(Integer id, StudyGroup updated) {
         StudyGroup existing = getById(id);
 
@@ -110,17 +120,21 @@ public class StudyGroupService {
 
         return repository.save(existing);
     }
+
+    @Transactional(readOnly = true)
     public StudyGroup getById(Integer id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(id)));
     }
 
+    @Transactional(readOnly = true)
     public List<StudyGroup> getAll() {
         return repository.findAll();
     }
 
+    @Transactional
     public void delete(Integer id) {
-        StudyGroup group = repository.findById(id)
+        StudyGroup group = repository.findByIdWithLock(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.ID_NULL.format()));
 
         if (repository.existsByCoordinatesAndIdNot(group.getCoordinates(), id)) {
@@ -138,6 +152,54 @@ public class StudyGroupService {
         }
 
         repository.delete(group);
+    }
+
+    @Transactional
+    public StudyGroup addStudentToGroup(Integer groupId) {
+        StudyGroup group = repository.findByIdWithLock(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(groupId)));
+
+        Long studentsCount = group.getStudentsCount() == null ? 0L : group.getStudentsCount();
+        group.setStudentsCount(studentsCount + 1);
+
+        return repository.save(group);
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public StudyGroup changeFormOfEducation(Integer groupId, FormOfEducation newForm) {
+        StudyGroup group = repository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.STUDYGROUP_NOT_FOUND.format(groupId)));
+
+        checkUniqueStudyGroup(group.getName(), newForm, group.getId());
+
+        group.setFormOfEducation(newForm);
+        return repository.save(group);
+    }
+
+    @Transactional(readOnly = true)
+    public long countBySemesterLessThan(Semester semester) {
+        if (semester == null) {
+            return 0;
+        }
+
+        return repository.findAll().stream()
+                .filter(g -> g.getSemesterEnum() != null)
+                .filter(g -> g.getSemesterEnum().ordinal() < semester.ordinal())
+                .count();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudyGroup> groupsWithAdminIdLessThan(Integer adminId) {
+        if (adminId == null) {
+            return List.of();
+        }
+
+        return repository.findByGroupAdmin_IdLessThan(adminId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> distinctShouldBeExpelled() {
+        return repository.findDistinctShouldBeExpelled();
     }
 
     private void checkUniqueStudyGroup(String name, FormOfEducation form, Integer excludeId) {
@@ -159,7 +221,7 @@ public class StudyGroupService {
         if (incoming == null) {
             return null;
         }
-        
+
         if (incoming.getId() != null) {
             return mergePerson(incoming);
         }
@@ -189,9 +251,9 @@ public class StudyGroupService {
             throw new IllegalArgumentException(ErrorMessages.PERSON_ID_NULL.format());
         }
 
-        Person managed = personRepository.findById(incoming.getId())
+        Person managed = personRepository.findByIdWithLock(incoming.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.PERSON_NOT_FOUND.format(incoming.getId())));
-        
+
         String targetName = incoming.getName() != null ? incoming.getName() : managed.getName();
 
         Location targetLocation = managed.getLocation();
@@ -199,7 +261,6 @@ public class StudyGroupService {
             if (incoming.getLocation().getId() != null) {
                 targetLocation = locationRepository.findById(incoming.getLocation().getId())
                         .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.LOCATION_NOT_FOUND.format(incoming.getLocation().getId())));
-                
             } else {
                 targetLocation = findOrCreateLocation(incoming.getLocation());
             }
@@ -210,25 +271,42 @@ public class StudyGroupService {
                 targetLocation.getX(),
                 targetLocation.getY(),
                 targetLocation.getName(),
-                managed.getId() 
+                managed.getId()
         );
 
         if (duplicateExists) {
             throw new DuplicateEntityException("Невозможно обновить Person: человек с таким именем и адресом уже существует.");
         }
 
-        if (incoming.getName() != null) managed.setName(incoming.getName());
-        if (incoming.getWeight() != null) managed.setWeight(incoming.getWeight());
-        if (incoming.getEyeColor() != null) managed.setEyeColor(incoming.getEyeColor());
-        if (incoming.getHairColor() != null) managed.setHairColor(incoming.getHairColor());
-        if (incoming.getNationality() != null) managed.setNationality(incoming.getNationality());
+        if (incoming.getName() != null) {
+            managed.setName(incoming.getName());
+        }
+
+        if (incoming.getWeight() != null) {
+            managed.setWeight(incoming.getWeight());
+        }
+
+        if (incoming.getEyeColor() != null) {
+            managed.setEyeColor(incoming.getEyeColor());
+        }
+
+        if (incoming.getHairColor() != null) {
+            managed.setHairColor(incoming.getHairColor());
+        }
+
+        if (incoming.getNationality() != null) {
+            managed.setNationality(incoming.getNationality());
+        }
+
         managed.setLocation(targetLocation);
 
         return personRepository.save(managed);
     }
 
     private Coordinates findOrCreateCoordinates(Coordinates incoming) {
-        if (incoming == null) return null;
+        if (incoming == null) {
+            return null;
+        }
 
         Double x = incoming.getX();
         Double y = incoming.getY();
@@ -242,7 +320,9 @@ public class StudyGroupService {
     }
 
     private Location findOrCreateLocation(Location loc) {
-        if (loc == null) return null;
+        if (loc == null) {
+            return null;
+        }
 
         Long x = loc.getX();
         Double y = loc.getY();
@@ -254,41 +334,5 @@ public class StudyGroupService {
 
         return locationRepository.findByXAndYAndName(x, y, name)
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
-    }
-
-    @Transactional(readOnly = true)
-    public long countBySemesterLessThan(Semester semester) {
-        if (semester == null) return 0;
-        return repository.findAll().stream()
-                .filter(g -> g.getSemesterEnum() != null)
-                .filter(g -> g.getSemesterEnum().ordinal() < semester.ordinal())
-                .count();
-    }
-
-    @Transactional(readOnly = true)
-    public List<StudyGroup> groupsWithAdminIdLessThan(Integer adminId) {
-        if (adminId == null) return List.of();
-        return repository.findByGroupAdmin_IdLessThan(adminId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Long> distinctShouldBeExpelled() {
-        return repository.findDistinctShouldBeExpelled();
-    }
-
-    public StudyGroup addStudentToGroup(Integer groupId) {
-        StudyGroup group = getById(groupId);
-        Long studentsCount = group.getStudentsCount() == null ? 0L : group.getStudentsCount();
-        group.setStudentsCount(studentsCount + 1);
-        return repository.save(group);
-    }
-
-    public StudyGroup changeFormOfEducation(Integer groupId, FormOfEducation newForm) {
-        StudyGroup group = getById(groupId);
-        
-        checkUniqueStudyGroup(group.getName(), newForm, group.getId());
-
-        group.setFormOfEducation(newForm);
-        return repository.save(group);
     }
 }

@@ -4,14 +4,14 @@
       <h1>StudyGroups — Управление группами</h1>
       <div class="controls">
         <button @click="openCreate">Создать группу</button>
-          <button @click="triggerFileInputClick" class="import-btn">Импорт (JSON)</button>
-          <input
-              type="file"
-              ref="fileInputRef"
-              @change="handleFileImport"
-              accept=".json,application/json"
-              style="display: none"
-          />
+        <button @click="triggerFileInputClick" class="import-btn">Импорт (JSON)</button>
+        <input
+            type="file"
+            ref="fileInputRef"
+            @change="handleFileImport"
+            accept=".json,application/json"
+            style="display: none"
+        />
 
         <button @click="showHistoryModal = true" class="history-btn">История импорта</button>
 
@@ -40,7 +40,7 @@
           @change-form="onSpecialChangeForm"
       />
 
-      <main style="flex:1">
+      <main class="main-content">
         <GroupsTable
             :groups="visibleGroups"
             :sort-field="sortField"
@@ -512,6 +512,7 @@ header {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap; 
 }
 
 button {
@@ -531,11 +532,11 @@ button:hover {
 }
 
 .import-btn {
-  background: linear-gradient(45deg, #ff02a8, #bd7bff);
+  background: linear-gradient(45deg, #ff02a8, #ff02a8);
 }
 
 .history-btn {
-  background: linear-gradient(45deg, #ffa0f0, #8784ff);
+  background: linear-gradient(45deg, #d3d1ff, #8784ff);
 }
 
 .filter input,
@@ -577,6 +578,14 @@ select {
   align-items: flex-start;
   gap: 24px;
   padding: 20px;
+}
+
+
+.main-content {
+  flex: 1;
+  min-width: 0; 
+  display: flex;
+  flex-direction: column;
 }
 
 .filter-reset {

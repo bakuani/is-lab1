@@ -57,7 +57,6 @@
           <div class="form-row"><label>Hair Color</label><select v-model="local.groupAdmin.hairColor" :disabled="isView" required><option disabled value="">Выберите</option><option value="RED">RED</option><option value="GREEN">GREEN</option><option value="BLUE">BLUE</option></select></div>
           <div class="form-row"><label>Weight</label><input type="number" v-model.number="local.groupAdmin.weight" :disabled="isView" min="0" required/></div>
           <div class="form-row"><label>Nationality</label><select v-model="local.groupAdmin.nationality" :disabled="isView" required><option disabled value="">Выберите</option><option value="INDIA">INDIA</option><option value="UNITED_KINGDOM">UNITED_KINGDOM</option><option value="JAPAN">JAPAN</option></select></div>
-
           <div class="form-row"><label>X</label><input type="number" v-model.number="local.groupAdmin.location.x" :disabled="isView" required/></div>
           <div class="form-row"><label>Y</label><input type="number" v-model.number="local.groupAdmin.location.y" :disabled="isView" required/></div>
           <div class="form-row"><label>Name</label><input v-model="local.groupAdmin.location.name" :disabled="isView" required/></div>
@@ -212,5 +211,4 @@ select:focus {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 </style>

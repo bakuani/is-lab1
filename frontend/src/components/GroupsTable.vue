@@ -12,7 +12,7 @@
         <th @click="$emit('change-sort', 'formOfEducation')">Form</th>
         <th @click="$emit('change-sort', 'semesterEnum')">Semester</th>
         <th @click="$emit('change-sort', 'groupAdmin.name')">Admin</th>
-        <th>Actions</th>
+        <th class="sticky-actions">Actions</th>
       </tr>
       </thead>
       <tbody>
@@ -85,7 +85,7 @@
           <div v-else @click="startEdit(g, 'groupAdmin.name')">{{ g.groupAdmin?.name }}</div>
         </td>
 
-        <td class="actions">
+        <td class="actions sticky-actions">
           <button @click="$emit('view-group', g.id)">View</button>
           <button @click="$emit('open-edit', g)">Edit</button>
           <button @click="$emit('confirm-delete', g.id)">Delete</button>
@@ -128,13 +128,19 @@ function saveEdit(originalGroup, field) {
 </script>
 
 <style scoped>
+.table-section {
+  width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+}
+
 .groups-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  min-width: 1200px;
 }
 
 .groups-table th,
@@ -142,12 +148,16 @@ function saveEdit(originalGroup, field) {
   padding: 10px 12px;
   text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .groups-table th {
   background: linear-gradient(90deg, #ff758c, #ff7eb3);
   color: #fff;
   cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .groups-table tr:nth-child(even) {
@@ -156,6 +166,7 @@ function saveEdit(originalGroup, field) {
 
 .groups-table td div[role="editable"], .groups-table td input, .groups-table td select {
   width: 100%;
+  min-width: 80px; 
 }
 
 .actions {
@@ -182,5 +193,21 @@ function saveEdit(originalGroup, field) {
   cursor: pointer;
   border-radius: 4px;
   padding: 6px;
+}
+
+.table-section::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.table-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.table-section::-webkit-scrollbar-thumb {
+  background: #ffb6c1;
+  border-radius: 4px;
+}
+.table-section::-webkit-scrollbar-thumb:hover {
+  background: #ff7eb3;
 }
 </style>

@@ -6,6 +6,5 @@ import ru.ani.islab1.models.ImportOperation;
 import java.util.List;
 
 public interface ImportOperationRepository extends JpaRepository<ImportOperation, Long> {
-    
     List<ImportOperation> findAllByOrderByOperationTimeDesc();
 }

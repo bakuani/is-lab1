@@ -1,9 +1,14 @@
 package ru.ani.islab1.repositories;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import ru.ani.islab1.models.Location;
 import ru.ani.islab1.models.Person;
+
+import java.util.Optional;
 
 @Repository
 public interface PersonRepository extends JpaRepository<Person, Integer> {
@@ -22,4 +27,8 @@ public interface PersonRepository extends JpaRepository<Person, Integer> {
             String locationName,
             Integer id
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Person p WHERE p.id = :id")
+    Optional<Person> findByIdWithLock(Integer id);
 }
