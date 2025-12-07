@@ -131,53 +131,34 @@ async function handleFileImport(event) {
   const file = event.target.files[0]
   if (!file) return
 
-  const reader = new FileReader()
+  try {
+    const result = await api.importGroups(file)
+    const importedCount = result?.imported ?? 0
 
-  reader.onload = async (e) => {
-    try {
-      const fileContent = e.target.result
-      const groupsToImport = JSON.parse(fileContent)
+    showToast(`Успешно импортировано ${importedCount} групп.`)
+    fetchGroups()
 
-      if (!Array.isArray(groupsToImport)) {
-        throw new Error('Файл должен содержать JSON-массив (список) групп.')
-      }
+  } catch (error) {
+    console.error('Ошибка импорта:', error)
+    let errorMessage = 'Ошибка импорта. '
 
-      const imported = await api.importGroups(groupsToImport)
-
-      showToast(`Успешно импортировано ${imported.length} групп.`)
-      fetchGroups()
-
-    } catch (error) {
-      console.error('Ошибка импорта:', error)
-      let errorMessage = 'Ошибка импорта. '
-
-      if (error.response?.data) {
-        const errors = error.response.data
-        if (typeof errors === 'object' && errors !== null) {
-          errorMessage += Object.values(errors).join(' ')
-        } else {
-          errorMessage += String(errors)
-        }
+    if (error.response?.data) {
+      const errors = error.response.data
+      if (typeof errors === 'object' && errors !== null) {
+        errorMessage += Object.values(errors).join(' ')
       } else {
-        errorMessage += error.message
+        errorMessage += String(errors)
       }
-
-      showToast(errorMessage, 6000)
-    } finally {
-      if (event.target) {
-        event.target.value = null
-      }
+    } else {
+      errorMessage += error.message
     }
-  }
 
-  reader.onerror = () => {
-    showToast('Не удалось прочитать файл.', 5000)
+    showToast(errorMessage, 6000)
+  } finally {
     if (event.target) {
       event.target.value = null
     }
   }
-
-  reader.readAsText(file)
 }
 
 function triggerFileInputClick() {

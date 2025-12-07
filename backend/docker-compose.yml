@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:15
@@ -14,5 +12,31 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql/data
 
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: studygroup_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio-data:/data
+
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: studygroup_minio_mc
+    depends_on:
+      - minio
+    entrypoint: |
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/imports-bucket;
+      "
+
 volumes:
   pgdata:
+  minio-data:

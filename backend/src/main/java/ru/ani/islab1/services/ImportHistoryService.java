@@ -3,6 +3,7 @@ package ru.ani.islab1.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.ImportOperation;
 import ru.ani.islab1.models.enums.ImportStatus;
 import ru.ani.islab1.repositories.ImportOperationRepository;
@@ -16,18 +17,18 @@ public class ImportHistoryService {
     private final ImportOperationRepository repository;
 
     @Transactional
-    public void logSuccess(String userName, int count) {
+    public void logSuccess(String userName, int count, String fileKey) {
         ImportOperation log = ImportOperation.builder()
                 .userName(userName)
                 .status(ImportStatus.SUCCESS)
                 .importedCount(count)
+                .minioFileKey(fileKey)
                 .build();
         repository.save(log);
     }
 
     @Transactional
     public void logFailure(String userName, String errorMessage) {
-        
         String safeError = (errorMessage != null && errorMessage.length() > 2048)
                 ? errorMessage.substring(0, 2045) + "..."
                 : errorMessage;
@@ -43,5 +44,11 @@ public class ImportHistoryService {
     @Transactional(readOnly = true)
     public List<ImportOperation> getHistory() {
         return repository.findAllByOrderByOperationTimeDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public ImportOperation getById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Import operation not found by id: " + id));
     }
 }

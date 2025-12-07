@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+export const API_BASE_URL = 'http://localhost:9090/api'
+
 const api = axios.create({
-    baseURL: 'http://localhost:9090/api',
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -14,7 +16,13 @@ export const updateGroup = (id, payload) => api.put(`/studygroups/${id}`, payloa
 export const deleteGroup = (id) => api.delete(`/studygroups/${id}`).then(res => res.data)
 export const addStudent = (id) => api.post(`/special/studygroups/${id}/add-student`).then(res => res.data)
 export const changeForm = (id, form) => api.post(`/special/studygroups/${id}/change-form`, { form }).then(res => res.data)
-export const importGroups = (groupsArray) => api.post('/studygroups/import', groupsArray).then(res => res.data)
+export const importGroups = (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/studygroups/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(res => res.data)
+}
 export const fetchImportHistory = () => api.get('/import-history').then(res => res.data)
 
 export const fetchPersons = () => api.get('/persons').then(res => res.data)
