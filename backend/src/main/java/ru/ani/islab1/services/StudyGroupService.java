@@ -8,6 +8,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
 import ru.ani.islab1.exceptions.DuplicateEntityException;
 import ru.ani.islab1.exceptions.ErrorMessages;
@@ -35,6 +36,8 @@ public class StudyGroupService {
     private final CoordinatesRepository coordinatesRepository;
     private final PersonRepository personRepository;
     private final LocationRepository locationRepository;
+    private final ImportHistoryService importHistoryService;
+    private final MinioService minioService;
 
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
     public List<StudyGroup> importGroups(List<StudyGroup> studyGroups) {
@@ -334,5 +337,39 @@ public class StudyGroupService {
 
         return locationRepository.findByXAndYAndName(x, y, name)
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
+    }
+
+    public int importGroupsWithFile(List<StudyGroup> groups, MultipartFile file, String userName) {
+        String fileKey = java.util.UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+
+        try {
+            minioService.uploadFile(fileKey, file.getInputStream(), file.getContentType());
+        } catch (Exception e) {
+            String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
+            throw new RuntimeException("Failed to upload file to MinIO: " + reason, e);
+        }
+
+        try {
+            return processDbImport(groups, fileKey, userName);
+        } catch (Exception e) {
+            try {
+                minioService.deleteFile(fileKey);
+            } catch (Exception deleteEx) {
+            }
+
+            String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
+            importHistoryService.logFailure(userName, reason);
+
+            throw new RuntimeException("Import failed and compensation performed: " + reason, e);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
+    public int processDbImport(List<StudyGroup> groups, String fileKey, String userName) {
+        List<StudyGroup> saved = this.importGroups(groups);
+
+        importHistoryService.logSuccess(userName, saved.size(), fileKey);
+
+        return saved.size();
     }
 }

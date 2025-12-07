@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import ru.ani.islab1.models.enums.FormOfEducation;
 import ru.ani.islab1.models.enums.Semester;
+import org.hibernate.annotations.Cache;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -17,6 +19,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class StudyGroup {
 
     @Id

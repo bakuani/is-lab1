@@ -18,6 +18,7 @@
             <th>Пользователь</th>
             <th>Статус</th>
             <th>Детали</th>
+            <th>Файл</th>
           </tr>
           </thead>
           <tbody>
@@ -35,6 +36,11 @@
               <div v-if="item.status === 'FAILED'" class="error-message">
                 {{ item.errorMessage }}
               </div>
+            </td>
+            <td>
+              <a v-if="item.status === 'SUCCESS' && item.minioFileKey" :href="downloadUrl(item.id)" target="_blank" rel="noopener">
+                Скачать
+              </a>
             </td>
           </tr>
           </tbody>
@@ -61,7 +67,6 @@ const history = ref([])
 const loading = ref(false)
 
 async function fetchHistory() {
-  if (history.value.length > 0) return
   loading.value = true
   try {
     history.value = await api.fetchImportHistory()
@@ -76,6 +81,7 @@ async function fetchHistory() {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
+    history.value = []
     fetchHistory()
   }
 })
@@ -85,6 +91,10 @@ function formatTime(isoString) {
 
   const safeIsoString = isoString.endsWith('Z') ? isoString : isoString + 'Z';
   return new Date(safeIsoString).toLocaleString('ru-RU')
+}
+
+function downloadUrl(id) {
+  return `${api.API_BASE_URL}/import-history/${id}/download`
 }
 </script>
 
