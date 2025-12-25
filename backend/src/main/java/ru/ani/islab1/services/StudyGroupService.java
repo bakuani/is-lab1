@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
 import ru.ani.islab1.exceptions.DuplicateEntityException;
 import ru.ani.islab1.exceptions.ErrorMessages;
+import ru.ani.islab1.exceptions.ImportProcessException;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.Coordinates;
 import ru.ani.islab1.models.Location;
@@ -352,7 +353,7 @@ public class StudyGroupService {
         } catch (Exception e) {
             String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
             importHistoryService.markRolledBack(txId, reason);
-            throw new RuntimeException("Failed to upload file to MinIO: " + reason, e);
+            throw new ImportProcessException("Failed to upload file to MinIO: " + reason, e);
         }
 
         try {
@@ -370,7 +371,7 @@ public class StudyGroupService {
             String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
             importHistoryService.markRolledBack(txId, reason);
 
-            throw new RuntimeException("Distributed import failed, rolled back: " + reason, e);
+            throw new ImportProcessException("Distributed import failed, rolled back: " + reason, e);
         }
     }
 

@@ -2,6 +2,7 @@ package ru.ani.islab1.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.ImportOperation;
@@ -17,19 +18,7 @@ public class ImportHistoryService {
 
     private final ImportOperationRepository repository;
 
-    @Transactional
-    public void logSuccess(String userName, int count, String fileKey) {
-        ImportOperation log = ImportOperation.builder()
-                .userName(userName)
-                .status(ImportStatus.SUCCESS)
-                .phase(ImportPhase.COMMITTED)
-                .importedCount(count)
-                .minioFileKey(fileKey)
-                .build();
-        repository.save(log);
-    }
-
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logFailure(String userName, String errorMessage) {
         String safeError = (errorMessage != null && errorMessage.length() > 2048)
                 ? errorMessage.substring(0, 2045) + "..."
@@ -44,7 +33,7 @@ public class ImportHistoryService {
         repository.save(log);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ImportOperation logPrepared(String txId, String userName, String pendingFileKey) {
         ImportOperation log = ImportOperation.builder()
                 .txId(txId)
@@ -56,7 +45,7 @@ public class ImportHistoryService {
         return repository.save(log);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markCommitted(String txId, String userName, int count, String finalFileKey) {
         ImportOperation op = repository.findByTxId(txId);
         if (op == null) {
@@ -70,7 +59,7 @@ public class ImportHistoryService {
         repository.save(op);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markRolledBack(String txId, String errorMessage) {
         ImportOperation op = repository.findByTxId(txId);
         if (op == null) {
