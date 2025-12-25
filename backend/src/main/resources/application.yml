@@ -1,17 +1,34 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:postgresql://localhost:2309/studygroup_db
+    username: admin
+    password: admin123
     driver-class-name: org.postgresql.Driver
+
   jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: false
+          region:
+            factory_class: org.infinispan.hibernate.cache.v62.InfinispanRegionFactory
+            infinispan:
+              cfg: infinispan-local.xml
     hibernate:
       ddl-auto: update
-    show-sql: true
-    properties:
-      jakarta.persistence.validation.mode: AUTO
-      hibernate:
-        format_sql: true
+
+minio:
+  url: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: imports-bucket
+
+app:
+  cache:
+    logging-enabled: true
 
 server:
   port: 9090

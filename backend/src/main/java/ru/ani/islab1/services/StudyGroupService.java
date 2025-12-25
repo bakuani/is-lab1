@@ -8,9 +8,11 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import ru.ani.islab1.exceptions.CannotDeleteStudyGroupException;
 import ru.ani.islab1.exceptions.DuplicateEntityException;
 import ru.ani.islab1.exceptions.ErrorMessages;
+import ru.ani.islab1.exceptions.ImportProcessException;
 import ru.ani.islab1.exceptions.ResourceNotFoundException;
 import ru.ani.islab1.models.Coordinates;
 import ru.ani.islab1.models.Location;
@@ -35,6 +37,8 @@ public class StudyGroupService {
     private final CoordinatesRepository coordinatesRepository;
     private final PersonRepository personRepository;
     private final LocationRepository locationRepository;
+    private final ImportHistoryService importHistoryService;
+    private final MinioService minioService;
 
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
     public List<StudyGroup> importGroups(List<StudyGroup> studyGroups) {
@@ -334,5 +338,53 @@ public class StudyGroupService {
 
         return locationRepository.findByXAndYAndName(x, y, name)
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
+    }
+
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
+    public int importGroupsWithFile(List<StudyGroup> groups, MultipartFile file, String userName) {
+        String txId = java.util.UUID.randomUUID().toString();
+        String pendingKey = txId + ".pending-" + file.getOriginalFilename();
+        String finalKey = txId + "-" + file.getOriginalFilename();
+
+        importHistoryService.logPrepared(txId, userName, pendingKey);
+
+        try {
+            minioService.uploadFile(pendingKey, file.getInputStream(), file.getContentType());
+        } catch (Exception e) {
+            String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
+            importHistoryService.markRolledBack(txId, reason);
+            throw new ImportProcessException("Failed to upload file to MinIO: " + reason, e);
+        }
+
+        try {
+            int savedCount = processDbImport(groups);
+
+            minioService.copyFile(pendingKey, finalKey);
+            minioService.deleteFile(pendingKey);
+
+            importHistoryService.markCommitted(txId, userName, savedCount, finalKey);
+            return savedCount;
+        } catch (Exception e) {
+            safeDeleteQuiet(finalKey);
+            safeDeleteQuiet(pendingKey);
+
+            String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
+            importHistoryService.markRolledBack(txId, reason);
+
+            throw new ImportProcessException("Distributed import failed, rolled back: " + reason, e);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
+    public int processDbImport(List<StudyGroup> groups) {
+        List<StudyGroup> saved = this.importGroups(groups);
+        return saved.size();
+    }
+
+    private void safeDeleteQuiet(String objectKey) {
+        try {
+            minioService.deleteFile(objectKey);
+        } catch (Exception ignored) {
+        }
     }
 }

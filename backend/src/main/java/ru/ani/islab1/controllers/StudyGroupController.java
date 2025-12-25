@@ -1,15 +1,21 @@
 package ru.ani.islab1.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.ani.islab1.models.StudyGroup;
 import ru.ani.islab1.services.ImportHistoryService;
 import ru.ani.islab1.services.StudyGroupService;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +24,12 @@ import java.util.Map;
 @RequestMapping("/api/studygroups")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class StudyGroupController {
 
     private final StudyGroupService service;
     private final ImportHistoryService importHistoryService;
+    private final ObjectMapper objectMapper;
 
 
     @PostMapping
@@ -53,24 +61,27 @@ public class StudyGroupController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/import")
-    public ResponseEntity<?> importGroups(@Valid @RequestBody List<StudyGroup> studyGroups) {
-        
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importGroups(@RequestParam("file") MultipartFile file) {
+
         final String DUMMY_USER = "system-user";
 
         try {
-            List<StudyGroup> imported = service.importGroups(studyGroups);
+            List<StudyGroup> studyGroups;
+            try (InputStream inputStream = file.getInputStream()) {
+                studyGroups = objectMapper.readValue(
+                        inputStream,
+                        new TypeReference<List<StudyGroup>>(){}
+                );
+            }
 
-            importHistoryService.logSuccess(DUMMY_USER, imported.size());
+            int count = service.importGroupsWithFile(studyGroups, file, DUMMY_USER);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(imported);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("imported", count));
 
         } catch (Exception e) {
-            importHistoryService.logFailure(DUMMY_USER, e.getMessage());
-
-            Map<String, String> body = new HashMap<>();
-            body.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+            log.error("Import failed", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Import failed"));
         }
     }
 }

@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ImportOperationRepository extends JpaRepository<ImportOperation, Long> {
     List<ImportOperation> findAllByOrderByOperationTimeDesc();
+
+    ImportOperation findByTxId(String txId);
 }

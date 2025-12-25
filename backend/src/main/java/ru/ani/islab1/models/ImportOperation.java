@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.ani.islab1.models.enums.ImportStatus;
+import ru.ani.islab1.models.enums.ImportPhase;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +30,13 @@ public class ImportOperation {
     @Column(nullable = false)
     private ImportStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ImportPhase phase;
+
+    @Column(length = 64)
+    private String txId;
+
     @Column(nullable = false)
     private String userName;
 
@@ -36,4 +44,7 @@ public class ImportOperation {
     
     @Column(length = 2048) 
     private String errorMessage;
+
+    @Column(length = 255)
+    private String minioFileKey;
 }
