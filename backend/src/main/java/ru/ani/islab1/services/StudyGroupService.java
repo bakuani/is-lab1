@@ -339,37 +339,51 @@ public class StudyGroupService {
                 .orElseGet(() -> locationRepository.save(new Location(null, x, y, name)));
     }
 
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
     public int importGroupsWithFile(List<StudyGroup> groups, MultipartFile file, String userName) {
-        String fileKey = java.util.UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+        String txId = java.util.UUID.randomUUID().toString();
+        String pendingKey = txId + ".pending-" + file.getOriginalFilename();
+        String finalKey = txId + "-" + file.getOriginalFilename();
+
+        importHistoryService.logPrepared(txId, userName, pendingKey);
 
         try {
-            minioService.uploadFile(fileKey, file.getInputStream(), file.getContentType());
+            minioService.uploadFile(pendingKey, file.getInputStream(), file.getContentType());
         } catch (Exception e) {
             String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
+            importHistoryService.markRolledBack(txId, reason);
             throw new RuntimeException("Failed to upload file to MinIO: " + reason, e);
         }
 
         try {
-            return processDbImport(groups, fileKey, userName);
+            int savedCount = processDbImport(groups);
+
+            minioService.copyFile(pendingKey, finalKey);
+            minioService.deleteFile(pendingKey);
+
+            importHistoryService.markCommitted(txId, userName, savedCount, finalKey);
+            return savedCount;
         } catch (Exception e) {
-            try {
-                minioService.deleteFile(fileKey);
-            } catch (Exception deleteEx) {
-            }
+            safeDeleteQuiet(finalKey);
+            safeDeleteQuiet(pendingKey);
 
             String reason = (e.getMessage() != null) ? e.getMessage() : e.getClass().getSimpleName();
-            importHistoryService.logFailure(userName, reason);
+            importHistoryService.markRolledBack(txId, reason);
 
-            throw new RuntimeException("Import failed and compensation performed: " + reason, e);
+            throw new RuntimeException("Distributed import failed, rolled back: " + reason, e);
         }
     }
 
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.SERIALIZABLE)
-    public int processDbImport(List<StudyGroup> groups, String fileKey, String userName) {
+    public int processDbImport(List<StudyGroup> groups) {
         List<StudyGroup> saved = this.importGroups(groups);
-
-        importHistoryService.logSuccess(userName, saved.size(), fileKey);
-
         return saved.size();
+    }
+
+    private void safeDeleteQuiet(String objectKey) {
+        try {
+            minioService.deleteFile(objectKey);
+        } catch (Exception ignored) {
+        }
     }
 }

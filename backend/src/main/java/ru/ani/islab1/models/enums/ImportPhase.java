@@ -1,9 +1,7 @@
 package ru.ani.islab1.models.enums;
 
-public enum ImportStatus {
+public enum ImportPhase {
     PREPARED,
     COMMITTED,
-    SUCCESS,
-    FAILED,
     ROLLED_BACK
 }

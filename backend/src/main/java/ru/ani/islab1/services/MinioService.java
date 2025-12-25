@@ -51,4 +51,14 @@ public class MinioService {
                         .object(objectName)
                         .build());
     }
+
+    @SneakyThrows
+    public void copyFile(String sourceObjectName, String targetObjectName) {
+        minioClient.copyObject(
+                CopyObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(targetObjectName)
+                        .source(CopySource.builder().bucket(bucketName).object(sourceObjectName).build())
+                        .build());
+    }
 }
